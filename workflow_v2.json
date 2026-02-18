@@ -1,0 +1,77 @@
+{
+  "name": "🇦🇿 Zeyd Muhasebe Otomasyonu v2",
+  "tags": ["maas", "mezuniyet", "kompensasiya", "azerbaycan"],
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9,
+              "triggerAtMinute": 0
+            }
+          ]
+        },
+        "timezone": "Asia/Baku"
+      },
+      "name": "AySonuTrigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { execSync } = require('child_process');\nconst fs = require('fs');\n\nconst output = execSync(\n  'cd /root/.openclaw/workspace/zeyd-muhasebe && python3 src/payroll_calculator.py data/isciler.xlsx',\n  { encoding: 'utf-8' }\n);\n\nconst result = JSON.parse(fs.readFileSync('/root/.openclaw/workspace/zeyd-muhasebe/output/hesabat.json', 'utf8'));\n\nconst summary = {\n  tarih: new Date().toISOString().split('T')[0],\n  ay: new Date().toLocaleString('az-AZ', { month: 'long', year: 'numeric' }),\n  isciler_sayisi: result.payroll.length,\n  toplam_brut: result.payroll.reduce((sum, p) => sum + p.gross_salary, 0),\n  toplam_net: result.payroll.reduce((sum, p) => sum + p.net_salary, 0),\n  toplam_vergi: result.payroll.reduce((sum, p) => sum + p.deductions.total, 0)\n};\n\nreturn [{ json: { summary, detail: result } }];"
+      },
+      "name": "MuhasebeHesapla",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "chatId": "7915474160",
+        "text": "=✅ <b>Muhasebe Hesabatı</b>\\n\\n📅 {{DateTime.now().format('d MMMM yyyy')}}\\n👥 İşçi sayı: {{ $('MuhasebeHesapla').item.json.summary.isciler_sayisi }}\\n💰 Toplam brüt: {{ $('MuhasebeHesapla').item.json.summary.toplam_brut }} AZN\\n💵 Toplam net: {{ $('MuhasebeHesapla').item.json.summary.toplam_net }} AZN\\n📉 Toplam vergi: {{ $('MuhasebeHesapla').item.json.summary.toplam_vergi }} AZN\\n\\nRaporlar: /workspace/zeyd-muhasebe/output/",
+        "parse_mode": "HTML"
+      },
+      "name": "TelegramBildiris",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [650, 300],
+      "credentials": {
+        "telegramApi": {
+          "id": "",
+          "name": ""
+        }
+      }
+    }
+  ],
+  "connections": {
+    "AySonuTrigger": {
+      "main": [
+        [
+          {
+            "node": "MuhasebeHesapla",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MuhasebeHesapla": {
+      "main": [
+        [
+          {
+            "node": "TelegramBildiris",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  }
+}
