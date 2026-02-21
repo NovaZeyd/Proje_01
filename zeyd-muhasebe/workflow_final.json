@@ -1,0 +1,82 @@
+{
+  "name": "Zeyd Muhasebe - Tam versiya",
+  "tags": ["muhasebe", "maas", "mezuniyet"],
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-manual",
+      "name": "Manuel Baslat",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Uploaded file data from previous node\nconst items = $input.all();\nconst binaryData = items[0].binary?.file?.data;\n\nif (!binaryData) {\n  return [{ json: { error: "Excel faylı tapılmadı" }}];\n}\n\n// Convert base64 to buffer and save temporarily\nconst fs = require('fs');\nconst path = '/tmp/uploaded_isciler.xlsx';\nfs.writeFileSync(path, Buffer.from(binaryData, 'base64'));\n\nreturn [{ json: { filePath: path, message: "Fayl yükləndi" }}];"
+      },
+      "id": "file-process",
+      "name": "Excel Yükle",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { execSync } = require('child_process');\nconst fs = require('fs');\n\ntry {\n  // Run Python calculator with uploaded file\n  const filePath = $input.first().json.filePath;\n  \n  const output = execSync(\n    `cd /root/.openclaw/workspace/zeyd-muhasebe && python3 -c \\"\\nimport sys\\nsys.path.insert(0, 'src')\\nfrom payroll_calculator import *\\nimport json\\n\\n# Read uploaded file\\nsystem = PayrollSystem('${filePath}')\\nsystem.load_data()\\n\\n# Calculate everything\\npayroll = system.process_payroll()\\nvacations = system.calculate_all_vacations()\\ncompensations = system.calculate_all_compensations({1: 5, 3: 10})  # Ex: 5 days unused for emp 1, 10 for emp 3\\n\\n# Calculate totals\\ntotal_gross = sum(p['gross_salary'] for p in payroll)\\ntotal_net = sum(p['net_salary'] for p in payroll)\\ntotal_tax = sum(p['deductions']['total'] for p in payroll)\\n\\nresult = {\\n  'payroll': payroll,\\n  'vacations': vacations,\\n  'compensations': compensations,\\n  'summary': {\\n    'total_employees': len(payroll),\\n    'total_gross': round(total_gross, 2),\\n    'total_net': round(total_net, 2),\\n    'total_tax': round(total_tax, 2)\\n  }\\n}\\n\\nprint(json.dumps(result, ensure_ascii=False, indent=2))\\n\\n# Save to file\\nwith open('output/n8n_result.json', 'w', encoding='utf-8') as f:\\n    json.dump(result, f, ensure_ascii=False, indent=2)\\n\"\\n`,\n    { encoding: 'utf-8', timeout: 60000 }\n  );\n  \n  const result = JSON.parse(output);\n  \n  return [{\n    json: {\n      success: true,\n      message: "Hesablamalar tamamlandı",\n      employee_count: result.summary.total_employees,\n      total_gross: result.summary.total_gross,\n      total_net: result.summary.total_net,\n      total_tax: result.summary.total_tax,\n      detail: result\n    }\n  }];\n  \n} catch (error) {\n  return [{\n    json: {\n      success: false,\n      error: error.message,\n      stderr: error.stderr?.toString()\n    }\n  }];\n}"
+      },
+      "id": "python-execute",
+      "name": "Python Hesapla",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const result = $input.first().json;\n\nif (!result.success) {\n  return [{ json: { hata: result.error }}];\n}\n\n// Create summary report\nconst summary = `\\n🇦🇿 ZEYD MUHASEBE HESABATI\\n════════════════════════════════\\n\\n📊 ÜMUMİ MƏLUMAT\\n👥 İşçi sayı: ${result.employee_count}\\n💰 Ümumi brüt: ${result.total_gross} AZN\\n💵 Ümubi net: ${result.total_net} AZN\\n📉 Ümumi vergi: ${result.total_tax} AZN\\n\\n👤 İŞÇİ SİYAHISI\\n${result.detail.payroll.map(p => \\\n`\\n${p.name}\\n  Brüt: ${p.gross_salary} AZN\\n  Net: ${p.net_salary} AZN\\n  Vergi: ${p.deductions.total} AZN\\n  İşəgötürən xərci: ${p.employer_cost} AZN`\\n).join('\\n')}\\n\\n🏖️ MƏZUNİYYƏT HÜQUQLARI\\n${result.detail.vacations.map(v => \\\n`${v.employee_name}: ${v.entitled_vacation_days} gün (Staj: ${v.tenure_years.toFixed(1)} il)`\\n).join('\\n')}\\n\\n📁 Fayl yeri: output/n8n_result.json\\n`;\n\nreturn [{\n  json: {\n    success: true,\n    summary: summary,\n    full_data: result\n  }\n}];"
+      },
+      "id": "format-output",
+      "name": "Netice Formatla",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 300]
+    }
+  ],
+  "connections": {
+    "Manuel Baslat": {
+      "main": [
+        [
+          {
+            "node": "Excel Yükle",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Excel Yükle": {
+      "main": [
+        [
+          {
+            "node": "Python Hesapla",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Python Hesapla": {
+      "main": [
+        [
+          {
+            "node": "Netice Formatla",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "saveManualExecutions": true
+  }
+}

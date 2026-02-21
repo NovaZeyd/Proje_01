@@ -1,0 +1,57 @@
+{
+  "name": "Zeyd Muhasebe Webhook",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "zeyd-hesaplama"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst { execSync } = require('child_process');\n\n// Get data from webhook body\nconst isciler = input.isciler || input.body?.isciler || [];\n\nif (isciler.length === 0) {\n  return [{\n    json: {\n      error: "İşçi məlumatı göndərilmədi",\n      usage: "POST edin: { \"isciler\": [{\"id\":1, \"ad\":\"Əli\", \"soyad\":\"Məmmədov\", \"maas\":2500, \"baslama_tarihi\":\"2019-03-15\"}] }"\n    }\n  }];\n}\n\n// Create temp JSON file for Python\nconst fs = require('fs');\nconst tmpFile = '/tmp/isciler_input.json';\nfs.writeFileSync(tmpFile, JSON.stringify({isciler: isciler}, null, 2));\n\ntry {\n  const output = execSync(\n    `python3 << 'PYTHON_EOF'\nimport json\nimport sys\nfrom datetime import datetime\n\nwith open('/tmp/isciler_input.json') as f:\n    data = json.load(f)\n    \nresults = []\nfor i in data['isciler']:\n    maas = i.get('maas', 0)\n    baslama = i.get('baslama_tarihi', '2020-01-01')\n    \n    # Vergi hesabla\n    dsmf = maas * 0.03\n    issizlik = maas * 0.005\n    gelir_vergi = maas * 0.14 if maas > 8000 else maas * 0.14\n    toplam_kesinti = dsmf + issizlik + gelir_vergi\n    net = maas - toplam_kesinti\n    isveren_maliyet = maas * 1.245  # DSMF + issizlik + saglik\n    \n    # Mezuniyyet\n    staj_yil = (datetime.now() - datetime.strptime(baslama, '%Y-%m-%d')).days / 365.25\n    mezuniyet = 30 + (int(staj_yil / 5) * 2) + (2 if staj_yil > 15 else 0)\n    \n    results.append({\n        'id': i.get('id'),\n        'ad': i.get('ad'),\n        'soyad': i.get('soyad'),\n        'maas_brut': maas,\n        'maas_net': round(net, 2),\n        'kesinti_toplam': round(toplam_kesinti, 2),\n        'isveren_maliyet': round(isveren_maliyet, 2),\n        'staj_yil': round(staj_yil, 2),\n        'mezuniyet_gun': mezuniyet\n    })\n    \ntotal_brut = sum(r['maas_brut'] for r in results)\ntotal_net = sum(r['maas_net'] for r in results)\n\nprint(json.dumps({\n    'isciler': results,\n    'ozet': {\n        'toplam_isci': len(results),\n        'toplam_brut': total_brut,\n        'toplam_net': round(total_net, 2)\n    }\n}, ensure_ascii=False))\nPYTHON_EOF`,\n    { encoding: 'utf-8', timeout: 30000 }\n  );\n  \n  return [{ json: JSON.parse(output) }];\n  \n} catch (e) {\n  return [{ json: { error: e.message, stderr: e.stderr?.toString() }}];\n}"
+      },
+      "name": "Hesapla",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "jsonOutput": "={{ JSON.stringify($input.first().json) }}"
+      },
+      "name": "Web sahifaye cavab",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [650, 300]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Hesapla",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hesapla": {
+      "main": [
+        [
+          {
+            "node": "Web sahifaye cavab",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {}
+}

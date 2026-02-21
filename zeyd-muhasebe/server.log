@@ -1,0 +1,10 @@
+🇦🇿 Zeyd Muhasebe API çalışıyor
+📍 http://localhost:5679
+➜ GET  /health - Sağlık kontrolü
+➜ POST /hesapla - Hesaplama yap
+➜ POST /api/calculate - Excel dosya
+
+Örnek kullanım:
+curl -X POST http://localhost:5679/hesapla \
+  -H "Content-Type: application/json" \
+  -d '{"isciler":[{"id":1,"ad":"Əli","soyad":"Məmmədov","maas":2500,"baslama_tarihi":"2019-03-15"}]}'

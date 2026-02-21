@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zeyd Muhasebe - Web Panel</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle { text-align: center; color: #888; margin-bottom: 30px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+        .card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 25px;
+            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+        }
+        .card h2 { margin-bottom: 20px; color: #00d4ff; font-size: 1.3em; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; color: #aaa; font-size: 0.9em; }
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            font-size: 1em;
+        }
+        input:focus { outline: none; border-color: #00d4ff; }
+        button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+            color: #fff;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0,212,255,0.3);
+        }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .isci-list { max-height: 300px; overflow-y: auto; }
+        .isci-item {
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 3px solid #00d4ff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .isci-info h4 { color: #00d4ff; }
+        .isci-info p { color: #888; font-size: 0.9em; margin-top: 5px; }
+        .metric-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 15px; }
+        .metric { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; text-align: center; }
+        .metric-value { font-size: 1.8em; font-weight: 700; color: #00d4ff; }
+        .metric-label { font-size: 0.85em; color: #888; margin-top: 5px; }
+        .status-dot {
+            display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+            background: #28a745; margin-right: 8px; animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9em; }
+        th, td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: left; }
+        th { color: #00d4ff; background: rgba(0,0,0,0.3); }
+        tr:hover { background: rgba(255,255,255,0.05); }
+        .add-btn { background: rgba(0,212,255,0.2); border: 1px solid #00d4ff; margin-top: 10px; }
+        .remove-btn { background: rgba(255,0,0,0.2); border: 1px solid #ff4444; padding: 5px 15px; width: auto; font-size: 0.8em; }
+        .json-output {
+            background: #0d1117; border-radius: 8px; padding: 15px;
+            font-family: 'Courier New', monospace; font-size: 0.85em;
+            overflow-x: auto; margin-top: 15px; color: #00d4ff;
+            max-height: 300px; overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🇦🇿 Zeyd Muhasebe</h1>
+        <p class="subtitle">İşçi Maaş Hesaplama Sistemi <span class="status-dot"></span>API Bağlı</p>
+        <div class="grid">
+            <div class="card">
+                <h2>📋 İşçi Ekle</h2>
+                <div class="input-group"><label>Ad</label><input type="text" id="ad" placeholder="Əli"></div>
+                <div class="input-group"><label>Soyad</label><input type="text" id="soyad" placeholder="Məmmədov"></div>
+                <div class="input-group"><label>Maaş (Brüt)</label><input type="number" id="maas" placeholder="2500"></div>
+                <div class="input-group"><label>Başlama Tarixi</label><input type="date" id="baslama_tarihi"></div>
+                <button onclick="isciEkle()" class="add-btn">+ İşçi Ekle</button>
+                <h2 style="margin-top: 25px;">👥 İşçi Listesi (<span id="isciSayisi">0</span>)</h2>
+                <div id="isciListesi" class="isci-list"><p style="color: #666; text-align: center; padding: 20px;">Henüz işçi eklenmedi</p></div>
+                <button onclick="hesapla()" id="hesaplaBtn" disabled>Hesapla</button>
+            </div>
+            <div class="card">
+                <h2>💰 Hesaplama Sonuçları</h2>
+                <div id="sonucBos" style="color: #666; text-align: center; padding: 40px;"><p>Sonuçlar için soldan işçi ekleyin</p></div>
+                <div id="sonucContainer" style="display: none;">
+                    <div class="metric-grid">
+                        <div class="metric"><div class="metric-value" id="toplamIsci">0</div><div class="metric-label">İşçi Sayısı</div></div>
+                        <div class="metric"><div class="metric-value" id="toplamBrut">0 ₼</div><div class="metric-label">Toplam Brüt</div></div>
+                        <div class="metric"><div class="metric-value" id="toplamNet">0 ₼</div><div class="metric-label">Toplam Net</div></div>
+                    </div>
+                    <h3 style="margin-top: 25px; color: #00d4ff;">📊 Detaylı Hesaplama</h3>
+                    <table id="detayTable"><thead><tr><th>İşçi</th><th>Brüt</th><th>Net</th></tr></thead><tbody></tbody></table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        let isciler = [];
+        function isciEkle() {
+            const ad = document.getElementById('ad').value.trim();
+            const soyad = document.getElementById('soyad').value.trim();
+            const maas = parseFloat(document.getElementById('maas').value);
+            const tarih = document.getElementById('baslama_tarihi').value;
+            if (!ad || !soyad || !maas || !tarih) { alert('Lütfen tüm alanları doldurun'); return; }
+            isciler.push({ ad, soyad, maas, baslama_tarihi: tarih });
+            document.getElementById('ad').value = ''; document.getElementById('soyad').value = '';
+            document.getElementById('maas').value = ''; document.getElementById('baslama_tarihi').value = '';
+            guncelleListe(); document.getElementById('hesaplaBtn').disabled = isciler.length === 0;
+        }
+        function guncelleListe() {
+            document.getElementById('isciSayisi').textContent = isciler.length;
+            const liste = document.getElementById('isciListesi');
+            if (isciler.length === 0) { liste.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">Henüz işçi eklenmedi</p>';
+                return;
+            }
+            liste.innerHTML = isciler.map((isci, i) => `
+                <div class="isci-item">
+                    <div class="isci-info">
+                        <h4>${isci.ad} ${isci.soyad}</h4>
+                        <p>${isci.maas} ₼ - ${isci.baslama_tarihi}</p>
+                    </div>
+                    <button class="remove-btn" onclick="isciSil(${i})">Sil</button>
+                </div>
+            `).join('');
+        }
+        function isciSil(index) {
+            isciler.splice(index, 1);
+            guncelleListe();
+            document.getElementById('hesaplaBtn').disabled = isciler.length === 0;
+        }
+        function hesapla() {
+            if (isciler.length === 0) return;
+            const vergiOrani = 0.14, sigortaOrani = 0.03;
+            let toplamBrut = 0, toplamNet = 0;
+            const tbody = document.querySelector('#detayTable tbody');
+            tbody.innerHTML = '';
+            isciler.forEach(isci => {
+                const vergi = isci.maas * vergiOrani;
+                const sigorta = isci.maas * sigortaOrani;
+                const net = isci.maas - vergi - sigorta;
+                toplamBrut += isci.maas;
+                toplamNet += net;
+                tbody.innerHTML += `<tr><td>${isci.ad} ${isci.soyad}</td><td>${isci.maas.toFixed(2)} ₼</td><td>${net.toFixed(2)} ₼</td></tr>`;
+            });
+            document.getElementById('toplamIsci').textContent = isciler.length;
+            document.getElementById('toplamBrut').textContent = toplamBrut.toFixed(2) + ' ₼';
+            document.getElementById('toplamNet').textContent = toplamNet.toFixed(2) + ' ₼';
+            document.getElementById('sonucBos').style.display = 'none';
+            document.getElementById('sonucContainer').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

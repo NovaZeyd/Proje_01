@@ -1,0 +1,71 @@
+{
+  "name": "Zeyd Muhasebe Otomasyonu",
+  "tags": ["maas", "mezuniyet", "kompensasiya", "azerbaycan"],
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9,
+              "triggerAtMinute": 0
+            }
+          ]
+        },
+        "timezone": "Asia/Baku"
+      },
+      "name": "AySonuTrigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { execSync } = require('child_process');\n\nconst output = execSync(\n  'cd /root/.openclaw/workspace/zeyd-muhasebe && python3 -c \"\\nimport sys\\nsys.path.insert(0, \"src\")\\nfrom payroll_calculator import *\\nimport json\\nsystem = PayrollSystem(\\\"data/isciler.xlsx\\\")\\nsystem.load_data()\\npayroll = system.process_payroll()\\nvacations = system.calculate_all_vacations()\\ncompensations = system.calculate_all_compensations({1: 5, 3: 10})\\nprint(json.dumps({\\\"payroll\\\": payroll, \\\"vacations\\\": vacations, \\\"compensations\\\": compensations}, ensure_ascii=False))\\n\"',\n  { encoding: 'utf-8' }\n);\n\nconst result = JSON.parse(output);\nreturn [{ json: result }];"
+      },
+      "name": "MuhasebeHesapla",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "sendTo": "=zeyd@example.com",
+        "subject": "🇦🇿 Aylık Maaş Hesabatı",
+        "text": "=Ayliq maaş hesabatı:\\n\\nSonuçlar JSON olarak ekte.\\n\\nNova - Zeyd Asistani"
+      },
+      "name": "EmailGonder",
+      "type": "n8n-nodes-base.sendEmail",
+      "typeVersion": 2,
+      "position": [650, 300]
+    }
+  ],
+  "connections": {
+    "AySonuTrigger": {
+      "main": [
+        [
+          {
+            "node": "MuhasebeHesapla",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MuhasebeHesapla": {
+      "main": [
+        [
+          {
+            "node": "EmailGonder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  }
+}
