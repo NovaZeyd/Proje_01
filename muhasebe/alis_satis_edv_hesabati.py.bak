@@ -1,0 +1,227 @@
+#!/usr/bin/env python3
+"""
+Alış/Satış ƏDV Hesabatı Modülü
+Azerbaycan Vergi Raporu - Alış ve Satış KDV Hesaplama Sistemi
+
+Modül: alis_satis_edv_hesabati.py
+Amaç: Elektron qaimə-faktura verilerinden KDV alış/satış raporu üretmek
+"""
+
+import pandas as pd
+import json
+from datetime import datetime, date
+from dataclasses import dataclass, asdict
+from typing import List, Dict, Optional, Tuple
+from pathlib import Path
+import re
+
+
+@dataclass
+class EDV_Kayit:
+    """Tek bir KDV kaydı (alış veya satış)"""
+    kayit_tarihi: str
+    fatura_no: str
+    fatura_serisi: str
+    voen: str
+    unvan: str
+    tip: str  # 'alis' veya 'satis'
+    edv_siz_tutar: float
+    edv_tutari: float
+    yekun_tutar: float
+    durum: str
+    
+    @property
+    def ay(self) -> int:
+        """Kaydın aydını döndürür (1-12)"""
+        return datetime.strptime(self.kayit_tarihi, "%d-%m-%Y").month
+    
+    @property
+    def yil(self) -> int:
+        """Kaydın yılını döndürür"""
+        return datetime.strptime(self.kayit_tarihi, "%d-%m-%Y").year
+    
+    @property
+    def edv_orani(self) -> float:
+        """Hesaplanmış KDV oranı"""
+        if self.edv_siz_tutar == 0:
+            return 0.0
+        return round((self.edv_tutari / self.edv_siz_tutar) * 100, 2)
+
+
+class EDV_Hesabat_Motoru:
+    """
+    Alış/Satış ƏDV Hesabatı Motoru
+    
+    Azerbaycan vergi sistemine uygun:
+    - Alış (girdi) KDV hesaplama
+    - Satış (çıktı) KDV hesaplama  
+    - Net KDV yükümlülüğü hesaplama
+    - Vergi dairesi rapor formatı üretme
+    """
+    
+    def __init__(self, data_path: Optional[str] = None):
+        self.kayitlar: List[EDV_Kayit] = []
+        self.data_path = data_path
+        self._kolon_haritasi = {
+            '№': 'no',
+            'VÖEN': 'voen',
+            'Adı': 'adi',
+            'Tipi': 'tipi',
+            'Vəziyyəti': 'veziyyet',
+            'Qaimə tarixi': 'qaime_tarixi',
+            'Qaimə seriyası': 'seriya',
+            'Qaimə nömrəsi': 'nomre',
+            "Malın ƏDV-siz ümumi dəyəri": 'edvsiz_deyer',
+            "Malın ƏDV məbləği": 'edv_mebleg',
+            'Yekun məbləğ': 'yekun_mebleg',
+            'ƏDV məbləği': 'edv_mebleg_alt'
+        }
+        
+    def excel_yukle(self, file_path: str) -> int:
+        """
+        Excel dosyasından fatura verilerini yükle
+        
+        Args:
+            file_path: Excel dosyasının yolu
+            
+        Returns:
+            Yüklenen kayıt sayısı
+        """
+        df = pd.read_excel(file_path)
+        
+        # Kolonları normalize et
+        df.columns = [col.strip() for col in df.columns]
+        
+        yuklenen = 0
+        for _, row in df.iterrows():
+            try:
+                kayit = self._satir_kayit_cevir(row)
+                if kayit:
+                    self.kayitlar.append(kayit)
+                    yuklenen += 1
+            except Exception as e:
+                print(f"Satır atlandı ({_}): {e}")
+                continue
+                
+        return yuklenen
+    
+    def _satir_kayit_cevir(self, row: pd.Series) -> Optional[EDV_Kayit]:
+        """Pandas satırını EDV_Kayit nesnesine çevir"""
+        
+        # Tarih formatını bul
+        tarih = self._tarih_cekirdek(str(row.get('Qaimə tarixi', '')))
+        if not tarih:
+            return None
+            
+        # Tutar kolonlarını bul
+        edvsiz = self._para_cevir(row.get("Malın ƏDV-siz ümumi dəyəri", 0))
+        edv = self._para_cevir(row.get("Malın ƏDV məbləği", 
+                  row.get("ƏDV məbləği", 0)))
+        yekun = self._para_cevir(row.get("Yekun məbləğ", 0))
+        
+        # Eğer yekun hesaplanmamışsa hesapla
+        if yekun == 0 and (edvsiz > 0 or edv > 0):
+            yekun = round(edvsiz + edv, 2)
+        
+        # Tipi belirle (cari şirketin VÖEN'ine göre alış/satış)
+        tip = self._tip_belirle(row.get('Tipi', ''), row.get('Vəziyyəti', ''))
+        
+        return EDV_Kayit(
+            kayit_tarihi=tarih,
+            fatura_no=str(row.get('Qaimə nömrəsi', '')),
+            fatura_serisi=str(row.get('Qaimə seriyası', '')),
+            voen=str(row.get('VÖEN', '')),
+            unvan=str(row.get('Adı', '')),
+            tip=tip,
+            edv_siz_tutar=edvsiz,
+            edv_tutari=edv,
+            yekun_tutar=yekun,
+            durum=str(row.get('Vəziyyəti', 'Cari'))
+        )
+    
+    def _tarih_cekirdek(self, tarih_str: str) -> str:
+        """Çeşitli tarih formatlarını standardize et (DD-MM-YYYY)"""
+        for fmt in ["%d-%m-%Y", "%Y-%m-%d", "%d.%m.%Y", "%d/%m/%Y"]:
+            try:
+                dt = datetime.strptime(tarih_str.strip(), fmt)
+                return dt.strftime("%d-%m-%Y")
+            except:
+                continue
+        return ""
+    
+    def _para_cevir(self, deger) -> float:
+        """Para değerini float'a çevir"""
+        if pd.isna(deger):
+            return 0.0
+        if isinstance(deger, (int, float)):
+            return float(deger)
+        # String temizleme
+        temiz = str(deger).replace(',', '.').replace(' ', '').replace('AZN', '')
+        try:
+            return float(temiz)
+        except:
+            return 0.0
+    
+    def _tip_belirle(self, tip_str: str, veziyyet: str) -> str:
+        """İşlem tipini belirle (alis/satis)"""
+        tip_str = str(tip_str).lower()
+        if 'sww' in tip_str or 'göndərən' in tip_str:
+            return 'satis'
+        elif 'rw' in tip_str or 'alan' in tip_str:
+            return 'alis'
+        # Vəziyyət'e göre varsayılan
+        return 'satis' if 'təsdiq' in str(veziyyet).lower() else 'alis'
+    
+    def aylik_ozet(self, yil: int, ay: int) -> Dict:
+        """Belirli ay için KDV özeti üret"""
+        aylik_kayitlar = [k for k in self.kayitlar 
+                         if k.yil == yil and k.ay == ay]
+        
+        alis_kayitlari = [k for k in aylik_kayitlar if k.tip == 'alis']
+        satis_kayitlari = [k for k in aylik_kayitlar if k.tip == 'satis']
+        
+        alis_toplam = {
+            'edvsiz': round(sum(k.edv_siz_tutar for k in alis_kayitlari), 2),
+            'edv': round(sum(k.edv_tutari for k in alis_kayitlari), 2),
+            'yekun': round(sum(k.yekun_tutar for k in alis_kayitlari), 2),
+            'kayit_sayisi': len(alis_kayitlari)
+        }
+        
+        satis_toplam = {
+            'edvsiz': round(sum(k.edv_siz_tutar for k in satis_kayitlari), 2),
+            'edv': round(sum(k.edv_tutari for k in satis_kayitlari), 2),
+            'yekun': round(sum(k.yekun_tutar for k in satis_kayitlari), 2),
+            'kayit_sayisi': len(satis_kayitlari)
+        }
+        
+        # Net KDV yükümlülüğü
+        net_edv = round(satis_toplam['edv'] - alis_toplam['edv'], 2)
+        
+        return {
+            'donem': f"{yil}-{ay:02d}",
+            'alis': alis_toplam,
+            'satis': satis_toplam,
+            'net_edv_yukumlulugu': net_edv,
+            'odenecek_edv': max(0, net_edv),
+            'iade_edv': abs(min(0, net_edv)),
+            'toplam_kayit': len(aylik_kayitlar)
+        }
+    
+    def vergi_dairesi_raporu(self, yil: int, ay: int) -> str:
+        """
+        Vergi dairesi formatında KDV raporu üret
+        Azərbaycan Respublikası Vergi Məcəlləsinə uyğun
+        """
+        ozet = self.aylik_ozet(yil, ay)
+        
+        rapor = f"""
+╔══════════════════════════════════════════════════════════════════╗
+║           ƏDV BƏYANNAMƏSİ - Aylıq Hesabat                        ║
+║     Azərbaycan Respublikası Vergi Məcəlləsi Əsasında              ║
+╠══════════════════════════════════════════════════════════════════╣
+  Hesabat Dönemi: {ay:02d}/{yil}
+  Hazırlanma Tarihi: {datetime.now().strftime('%d-%m-%Y %H:%M')}
+╠══════════════════════════════════════════════════════════════════╣
+
+▌ SATIŞ (ÇIXIŞ) ƏDV
+├
