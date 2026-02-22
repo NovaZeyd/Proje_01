@@ -29,6 +29,7 @@ class EDV_Kaydi:
     veziyyet: str
     yil: int
     ay: int
+    bolgu_tipi: Optional[str] = None
 
 
 class EDV_Motor:
@@ -133,7 +134,9 @@ class EDV_Motor:
                       'sayi': len(satis)},
             'net': round(net, 2),
             'odenecek': max(0, round(net, 2)),
-            'iade': abs(min(0, round(net, 2)))
+            'iade': abs(min(0, round(net, 2))),
+            'devlet_butcesi_bolgus_edv': round(max(0, net) * 0.20, 2),
+            'qaytarilmali_bolgu_edv': round(max(0, net) * 0.80, 2)
         }
 
     def rapor(self, yil: int, ay: int, voen: str = "") -> str:
@@ -163,6 +166,10 @@ NET HESAB
   ────────────────────────────────────
   ÖDƏNƏCƏK:         {o['odenecek']:>12,.2f} AZN
   İADƏ EDİLƏCƏK:    {o['iade']:>12,.2f} AZN
+
+BOLGÜ HESABI (%20 Devlet Bütçesi / %80 Qaytarılmalı)
+  Devlet Bütçesi (20%):   {o['devlet_butcesi_bolgus_edv']:>12,.2f} AZN
+  Qaytarılmalı (80%):    {o['qaytarilmali_bolgu_edv']:>12,.2f} AZN
 
 ╚════════════════════════════════════════════════════════════╝"""
 
