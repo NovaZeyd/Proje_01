@@ -492,9 +492,14 @@ tr:hover td{background:rgba(99,102,241,.05);cursor:pointer}
       <div class="card" style="border-left:4px solid var(--accent)">
         <div class="card-head">
           <h3>📋 1. Qaimələrə görə (ƏDV Depozit Hesabı)</h3>
-          <span class="muted" id="kat1-toplam">15,858.18 ₼</span>
-          <button class="btn ghost" style="font-size:.7rem;padding:4px 10px;margin-left:8px" onclick="document.getElementById('file-kat1').click()">📥 Excel İdxal</button>
+          <span class="muted" id="kat1-toplam">—</span>
+          <span id="kat1-sync-lbl" style="font-size:.68rem;color:var(--muted);margin-left:8px"></span>
+          <button class="btn ghost" style="font-size:.7rem;padding:4px 10px;margin-left:8px" onclick="loadFromAvazlesme()">🔄 Sinxronizasiya</button>
+          <a href="avazlesme.html" target="_blank" class="btn ghost" style="font-size:.7rem;padding:4px 10px">🔗 Əvəzləşmə Sistemi</a>
           <input type="file" id="file-kat1" accept=".xlsx,.xls" style="display:none" onchange="importEdvDeposit(this)">
+        </div>
+        <div id="kat1-sync-alert" class="alert info" style="margin-bottom:10px;display:none">
+          💡 Məlumatlar <strong>ƏDV Əvəzləşmə Sistemi</strong>ndən avtomatik yükləndi. Dəyişiklik üçün <a href="avazlesme.html" target="_blank" style="color:var(--accent)">buraya keçin</a>.
         </div>
         <div class="tbl-wrap">
           <table id="tbl-kat1">
@@ -502,89 +507,35 @@ tr:hover td{background:rgba(99,102,241,.05);cursor:pointer}
               <tr>
                 <th>#</th>
                 <th>Tarix</th>
-                <th>Təchizatçı</th>
+                <th>Satıcı</th>
                 <th>VÖEN</th>
                 <th>EQF Seriya</th>
                 <th>EQF Nömrə</th>
                 <th class="num">ƏDV Məbləği (₼)</th>
-                <th>Büdcə Kodu</th>
                 <th>Status</th>
                 <th>Əməliyyat</th>
               </tr>
             </thead>
             <tbody id="tbody-kat1">
-              <tr>
-                <td>1</td><td>29-01-2026</td>
-                <td contenteditable="true">LUKOIL-AZƏRBAYCAN QSC</td>
-                <td>9900006931</td>
-                <td>MT2601</td><td>—</td>
-                <td class="num" contenteditable="true">36.00</td>
-                <td>114111</td>
-                <td><span class="badge ok">✅ Ödənildi</span></td>
-                <td><button onclick="deleteRow(this)" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:.8rem">🗑</button></td>
-              </tr>
-              <tr>
-                <td>2</td><td>29-01-2026</td>
-                <td contenteditable="true">ALAZAN TEKSTİL MMC</td>
-                <td>1309355061</td>
-                <td>MT2601</td><td>11463630</td>
-                <td class="num" contenteditable="true">270.00</td>
-                <td>114111</td>
-                <td><span class="badge ok">✅ Ödənildi</span></td>
-                <td><button onclick="deleteRow(this)" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:.8rem">🗑</button></td>
-              </tr>
-              <tr>
-                <td>3</td><td>29-01-2026</td>
-                <td contenteditable="true">MİRE-5 MMC</td>
-                <td>1906496911</td>
-                <td>MT2601</td><td>10711345</td>
-                <td class="num" contenteditable="true">900.00</td>
-                <td>114111</td>
-                <td><span class="badge ok">✅ Ödənildi</span></td>
-                <td><button onclick="deleteRow(this)" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:.8rem">🗑</button></td>
-              </tr>
-              <tr>
-                <td>4</td><td>27-01-2026</td>
-                <td contenteditable="true">FACİLİTY MANAGEMENT GROUP MMC</td>
-                <td>1403645031</td>
-                <td>MT2601</td><td>11704067</td>
-                <td class="num" contenteditable="true">756.61</td>
-                <td>114111</td>
-                <td><span class="badge ok">✅ Ödənildi</span></td>
-                <td><button onclick="deleteRow(this)" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:.8rem">🗑</button></td>
-              </tr>
-              <tr>
-                <td>5</td><td>14-01-2026</td>
-                <td contenteditable="true">MİRE-5 MMC</td>
-                <td>1906496911</td>
-                <td>MT2512</td><td>12316836</td>
-                <td class="num" contenteditable="true">540.00</td>
-                <td>114111</td>
-                <td><span class="badge ok">✅ Ödənildi</span></td>
-                <td><button onclick="deleteRow(this)" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:.8rem">🗑</button></td>
-              </tr>
-              <tr id="kat1-digər">
-                <td>…</td><td>—</td>
-                <td>Digər (188 əməliyyat)</td>
-                <td>—</td><td>—</td><td>—</td>
-                <td class="num">13,355.57</td>
-                <td>114111</td>
-                <td><span class="badge ok">✅</span></td>
-                <td></td>
+              <tr id="kat1-placeholder">
+                <td colspan="9" style="text-align:center;padding:20px;color:var(--muted);font-size:.8rem">
+                  🔄 <strong>ƏDV Əvəzləşmə Sistemi</strong>ndən məlumat yükləmək üçün yuxarıdakı "Sinxronizasiya" düyməsini basın<br>
+                  <small>və ya <a href="avazlesme.html" target="_blank" style="color:var(--accent)">əvəzləşmə sistemini</a> açın</small>
+                </td>
               </tr>
             </tbody>
             <tfoot>
               <tr style="background:rgba(99,102,241,.08);font-weight:700">
                 <td colspan="6">CƏMİ — Qaimələrə görə əvəzləşdirmə</td>
-                <td class="num" id="kat1-cem">15,858.18 ₼</td>
-                <td colspan="3"></td>
+                <td class="num" id="kat1-cem">—</td>
+                <td colspan="2"></td>
               </tr>
             </tfoot>
           </table>
         </div>
         <div style="margin-top:10px;display:flex;gap:8px">
-          <button class="btn ghost" style="font-size:.75rem" onclick="addKat1Row()">+ Sətir əlavə et</button>
-          <button class="btn ghost" style="font-size:.75rem" onclick="recalcKat1()">🔄 Yenidən hesabla</button>
+          <button class="btn ghost" style="font-size:.75rem" onclick="loadFromAvazlesme()">🔄 Sinxronizasiya et</button>
+          <button class="btn ghost" style="font-size:.75rem" onclick="recalcKat1()">📊 Yenidən hesabla</button>
         </div>
       </div>
 
@@ -963,6 +914,7 @@ function navigate(id) {
     if(n.getAttribute('onclick')?.includes("'"+id+"'")) n.classList.add('active');
   });
   if(id==='bank') setTimeout(initBankCharts,100);
+  if(id==='edv') setTimeout(onEdvPageOpen, 200);
   window.scrollTo(0,0);
 }
 
@@ -1273,6 +1225,60 @@ function downloadEdvExcel(){
   const ws=XLSX.utils.aoa_to_sheet(data);
   XLSX.utils.book_append_sheet(wb,ws,'EDV_Hesabat');
   XLSX.writeFile(wb,'edv_hesabat_'+ay.replace('-','_')+'.xlsx');
+}
+
+// ── SYNC FROM AVAZLESME ──
+function loadFromAvazlesme() {
+  try {
+    const raw = localStorage.getItem('edv_avazlesme');
+    if (!raw) {
+      showToast('⚠️ Əvəzləşmə sistemindən məlumat tapılmadı. Əvvəlcə həmin səhifəni açın.', 'warn');
+      window.open('avazlesme.html','_blank');
+      return;
+    }
+    const data = JSON.parse(raw);
+    const rows = data.summary?.kat1Rows || [];
+    const total = data.summary?.total || 0;
+    const tbody = document.getElementById('tbody-kat1');
+    tbody.innerHTML = '';
+
+    rows.forEach((r, idx) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${idx+1}</td>
+        <td>${r.tarix||'—'}</td>
+        <td contenteditable="true">${r.satici||'—'}</td>
+        <td style="font-size:.7rem;color:var(--muted)">${r.voen||'—'}</td>
+        <td style="color:var(--accent);font-weight:700">${r.seriya||'—'}</td>
+        <td style="font-variant-numeric:tabular-nums">${r.no||'—'}</td>
+        <td class="num" contenteditable="true">${Number(r.edv||0).toFixed(2)}</td>
+        <td><span class="badge ok">✅ Tam ödənilib</span></td>
+        <td><button onclick="deleteRow(this)" style="background:none;border:none;color:var(--red);cursor:pointer">🗑</button></td>`;
+      tbody.appendChild(tr);
+    });
+
+    document.getElementById('kat1-cem').textContent = Number(total).toLocaleString('az',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' ₼';
+    document.getElementById('kat1-toplam').textContent = rows.length + ' qaimə';
+    document.getElementById('kat1-sync-lbl').textContent = '(Son yenilənmə: ' + new Date(data.updatedAt).toLocaleTimeString('az') + ')';
+    document.getElementById('kat1-sync-alert').style.display = 'block';
+
+    // Update yekun
+    edvHesabla();
+    showToast('✅ ' + rows.length + ' qaimə sinxronizasiya edildi');
+  } catch(e) {
+    showToast('❌ Sinxronizasiya xətası: ' + e.message, 'err');
+  }
+}
+
+// Auto-load on ƏDV page open
+function onEdvPageOpen() {
+  try {
+    const raw = localStorage.getItem('edv_avazlesme');
+    if (raw) {
+      const data = JSON.parse(raw);
+      if (data.summary?.kat1Rows?.length > 0) loadFromAvazlesme();
+    }
+  } catch(e) {}
 }
 
 // ── TOAST ──
