@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ƏDV Əvəzləşmə Sistemi</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#0d0f1a; --card:#1a1f2e; --card2:#222840; --sidebar:#111827;
+  --accent:#6366f1; --accent2:#10b981; --red:#ef4444; --yellow:#f59e0b;
+  --orange:#f97316; --purple:#8b5cf6; --cyan:#06b6d4;
+  --text:#e2e8f0; --muted:#64748b; --border:#1e2a3a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+
+/* TOPBAR */
+.topbar{background:var(--sidebar);border-bottom:1px solid var(--border);padding:0 20px;height:56px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100}
+.topbar h1{font-size:.95rem;font-weight:800}
+.topbar a{color:var(--muted);font-size:.78rem;text-decoration:none}
+.topbar a:hover{color:var(--text)}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+
+/* PERIOD BAR */
+.period-bar{background:var(--card);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.period-bar select,.period-bar input{background:var(--card2);border:1px solid var(--border);color:var(--text);padding:7px 12px;border-radius:7px;font-size:.8rem}
+.period-bar label{font-size:.72rem;color:var(--muted)}
+
+/* MAIN LAYOUT */
+.workspace{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto 1fr;gap:0;height:calc(100vh - 56px - 50px);overflow:hidden}
+@media(max-width:1000px){.workspace{grid-template-columns:1fr;height:auto}}
+
+/* PANELS */
+.panel{border:1px solid var(--border);overflow:hidden;display:flex;flex-direction:column}
+.panel-left{border-right:none}
+.panel-head{background:var(--card2);padding:10px 14px;display:flex;align-items:center;gap:8px;flex-shrink:0;border-bottom:1px solid var(--border)}
+.panel-head h3{font-size:.82rem;font-weight:700}
+.panel-body{overflow-y:auto;flex:1}
+.panel-bottom{grid-column:1/-1;border-top:none}
+
+/* TABS */
+.tabs{display:flex;background:var(--card2);border-bottom:1px solid var(--border);flex-shrink:0}
+.tab-btn{padding:9px 16px;font-size:.76rem;cursor:pointer;border:none;background:none;color:var(--muted);border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);background:rgba(99,102,241,.06)}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:.65rem;font-weight:700;white-space:nowrap}
+.badge.gozleyir{background:rgba(100,116,139,.15);color:var(--muted)}
+.badge.qismen{background:rgba(245,158,11,.15);color:var(--yellow)}
+.badge.tam{background:rgba(16,185,129,.15);color:var(--accent2)}
+.badge.avazlesdirilib{background:rgba(99,102,241,.15);color:var(--accent)}
+.badge.qismen-avaz{background:rgba(139,92,246,.15);color:var(--purple)}
+.badge.kohnə{background:rgba(239,68,68,.15);color:var(--red)}
+.badge.avans{background:rgba(6,182,212,.15);color:var(--cyan)}
+.badge.baglandi{background:rgba(16,185,129,.2);color:var(--accent2)}
+.badge.sənədsiz{background:rgba(249,115,22,.15);color:var(--orange)}
+
+/* INVOICE ROW */
+.inv-row{padding:10px 14px;border-bottom:1px solid rgba(30,42,58,.7);cursor:pointer;transition:background .12s;display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:start}
+.inv-row:hover{background:rgba(99,102,241,.06)}
+.inv-row.selected{background:rgba(99,102,241,.12);border-left:3px solid var(--accent)}
+.inv-row.warn-old{background:rgba(239,68,68,.04)}
+.inv-no{font-size:.72rem;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
+.inv-name{font-size:.76rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.inv-sub{font-size:.68rem;color:var(--muted);margin-top:2px}
+.inv-amount{font-size:.82rem;font-weight:800;text-align:right;white-space:nowrap}
+.inv-amount.paid{color:var(--accent2)}
+.inv-amount.partial{color:var(--yellow)}
+.inv-amount.unpaid{color:var(--muted)}
+.inv-icons{font-size:.7rem;margin-top:3px;text-align:right;color:var(--muted)}
+
+/* PAYMENT ROW */
+.pay-row{padding:10px 14px;border-bottom:1px solid rgba(30,42,58,.7);cursor:pointer;transition:background .12s;display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:start}
+.pay-row:hover{background:rgba(16,185,129,.05)}
+.pay-row.unmatched{background:rgba(245,158,11,.04);border-left:3px solid var(--yellow)}
+.pay-row.matched{opacity:.7}
+.pay-date{font-size:.72rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.pay-ref{font-size:.73rem;color:var(--cyan);font-weight:600;margin-top:1px;word-break:break-all}
+.pay-amount{font-size:.85rem;font-weight:800;color:var(--accent2);text-align:right}
+.pay-who{font-size:.68rem;color:var(--muted);margin-top:2px}
+.pay-match{font-size:.68rem;margin-top:3px;text-align:right}
+
+/* SUMMARY TABLE */
+.sum-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;padding:14px}
+.sum-item{background:var(--card2);border-radius:8px;padding:12px 14px}
+.sum-lbl{font-size:.65rem;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.sum-val{font-size:1.1rem;font-weight:800}
+.sum-val.green{color:var(--accent2)}
+.sum-val.yellow{color:var(--yellow)}
+.sum-val.red{color:var(--red)}
+.sum-val.cyan{color:var(--cyan)}
+
+/* ALERT */
+.alert-bar{padding:8px 14px;font-size:.75rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0}
+.alert-bar.warn{background:rgba(245,158,11,.08);color:var(--yellow)}
+.alert-bar.err{background:rgba(239,68,68,.08);color:var(--red)}
+.alert-bar.ok{background:rgba(16,185,129,.08);color:var(--accent2)}
+.alert-bar.info{background:rgba(99,102,241,.08);color:var(--accent)}
+
+/* PROGRESS BAR (partial payment) */
+.prog{background:var(--border);border-radius:4px;height:4px;margin-top:4px}
+.prog-fill{height:100%;border-radius:4px;background:var(--accent2)}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:800;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:26px;max-width:540px;width:92%;max-height:85vh;overflow-y:auto}
+.modal h3{font-size:.95rem;font-weight:800;margin-bottom:14px}
+.modal-close{float:right;background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.2rem;margin-top:-4px}
+.modal-table{width:100%;border-collapse:collapse;font-size:.78rem;margin-top:10px}
+.modal-table th{background:var(--card2);padding:8px 10px;text-align:left;color:var(--muted);font-weight:600}
+.modal-table td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+.modal-table tr:last-child td{border-bottom:none}
+
+/* BUTTONS */
+.btn{padding:7px 16px;border-radius:7px;font-size:.78rem;cursor:pointer;border:none;font-weight:600;transition:all .15s}
+.btn.primary{background:var(--accent);color:#fff}
+.btn.success{background:var(--accent2);color:#fff}
+.btn.warn{background:var(--yellow);color:#000}
+.btn.ghost{background:none;border:1px solid var(--border);color:var(--muted)}
+.btn.ghost:hover{border-color:var(--accent);color:var(--text)}
+.btn.danger{background:var(--red);color:#fff}
+.btn.sm{padding:4px 10px;font-size:.7rem}
+
+/* SEARCH */
+.search-inp{background:var(--card2);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:.76rem;width:150px}
+.search-inp:focus{outline:none;border-color:var(--accent)}
+
+/* FILTER CHIPS */
+.chips{display:flex;gap:6px;flex-wrap:wrap;padding:8px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
+.chip{padding:3px 10px;border-radius:20px;font-size:.68rem;cursor:pointer;border:1px solid var(--border);color:var(--muted);transition:all .12s}
+.chip.active{border-color:var(--accent);color:var(--accent);background:rgba(99,102,241,.08)}
+
+/* UPLOAD BTN */
+.upload-btn{padding:5px 12px;border-radius:6px;font-size:.72rem;cursor:pointer;background:var(--card2);border:1px dashed var(--border);color:var(--muted);transition:all .12s}
+.upload-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* MATCH LINK */
+.match-link{color:var(--accent);font-size:.68rem;cursor:pointer;text-decoration:underline}
+.match-link:hover{color:var(--accent2)}
+
+/* FIFO SUGGESTION */
+.fifo-row{display:flex;align-items:center;gap:8px;padding:8px;background:rgba(245,158,11,.06);border-radius:6px;margin-bottom:6px;font-size:.78rem}
+.fifo-row .arrow{color:var(--yellow);font-size:1rem}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:30px;color:var(--muted);font-size:.8rem}
+.empty .icon{font-size:2rem;margin-bottom:8px}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <span style="font-size:1.1rem">🔄</span>
+  <h1>ƏDV Əvəzləşmə Sistemi</h1>
+  <a href="index.html">← Panelə qayıt</a>
+  <div class="topbar-right">
+    <button class="btn ghost sm" onclick="runAutoMatch()">⚡ Avtomatik Eşləş</button>
+    <button class="btn primary sm" onclick="openFinalModal()">📋 Bəyannamə Xülasəsi</button>
+    <button class="btn success sm" onclick="exportAvaz()">⬇️ Export</button>
+  </div>
+</div>
+
+<!-- PERIOD BAR -->
+<div class="period-bar">
+  <div>
+    <label>Hesabat Dövrü</label><br>
+    <select id="sel-ay" onchange="changePeriod()">
+      <option value="11-2025">Noyabr 2025</option>
+      <option value="12-2025">Dekabr 2025</option>
+      <option value="01-2026" selected>Yanvar 2026</option>
+      <option value="02-2026">Fevral 2026</option>
+    </select>
+  </div>
+  <div>
+    <label>Şirkət (VÖEN)</label><br>
+    <select id="sel-voen">
+      <option value="2302351311">"3V" MMC — 2302351311</option>
+    </select>
+  </div>
+  <div>
+    <label>Alış qaimələri (Excel)</label><br>
+    <label class="upload-btn">📥 Import <input type="file" accept=".xlsx,.xls" style="display:none" onchange="importQaimeler(this)"></label>
+  </div>
+  <div>
+    <label>ƏDV Depozit ödənişləri (Excel)</label><br>
+    <label class="upload-btn">📥 Import <input type="file" accept=".xlsx,.xls" style="display:none" onchange="importDepozit(this)"></label>
+  </div>
+  <div style="margin-left:auto;display:flex;gap:8px;align-items:flex-end">
+    <div id="match-stat" style="font-size:.72rem;color:var(--muted)">—</div>
+  </div>
+</div>
+
+<!-- WORKSPACE: 2 column + bottom summary -->
+<div class="workspace">
+
+  <!-- LEFT: QAİMƏLƏR -->
+  <div class="panel panel-left">
+    <div class="panel-head">
+      <span>📋</span>
+      <h3>Alış Qaimələri</h3>
+      <div style="margin-left:auto;display:flex;gap:6px">
+        <input class="search-inp" type="text" placeholder="Axtar..." oninput="filterInvoices(this.value)" id="inv-search">
+        <button class="btn ghost sm" onclick="openAddInvModal()">+ Əl ilə</button>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs" id="inv-tabs">
+      <button class="tab-btn active" onclick="switchInvTab(this,'tab-cari')" id="btn-cari">Cari dövr <span id="cnt-cari" class="badge gozleyir">0</span></button>
+      <button class="tab-btn" onclick="switchInvTab(this,'tab-kohne')" id="btn-kohne">Köhnə qalıq <span id="cnt-kohne" class="badge kohnə">0</span></button>
+      <button class="tab-btn" onclick="switchInvTab(this,'tab-avans')" id="btn-avans">Avans (AA) <span id="cnt-avans" class="badge avans">0</span></button>
+    </div>
+
+    <!-- Chips filter -->
+    <div class="chips" id="inv-chips">
+      <span class="chip active" onclick="setInvFilter(this,'hamisi')">Hamısı</span>
+      <span class="chip" onclick="setInvFilter(this,'gozleyir')">Gözləyir</span>
+      <span class="chip" onclick="setInvFilter(this,'qismen')">Qismən ödənilib</span>
+      <span class="chip" onclick="setInvFilter(this,'tam')">Tam ödənilib</span>
+      <span class="chip" onclick="setInvFilter(this,'avazlesdirilib')">Əvəzləşdirilib</span>
+    </div>
+
+    <div class="panel-body">
+      <div id="tab-cari" class="tab-pane active"><div id="list-cari"></div></div>
+      <div id="tab-kohne" class="tab-pane"><div id="list-kohne"></div></div>
+      <div id="tab-avans" class="tab-pane"><div id="list-avans"></div></div>
+    </div>
+  </div>
+
+  <!-- RIGHT: DEPOZİT ÖDƏNİŞLƏRİ -->
+  <div class="panel">
+    <div class="panel-head">
+      <span>💳</span>
+      <h3>ƏDV Depozit Ödənişləri</h3>
+      <div style="margin-left:auto;display:flex;gap:6px">
+        <input class="search-inp" type="text" placeholder="Axtar..." oninput="filterPayments(this.value)">
+        <button class="btn ghost sm" onclick="openAddPayModal()">+ Əl ilə</button>
+      </div>
+    </div>
+
+    <div id="unmatched-alert" class="alert-bar warn" style="display:none">
+      ⚠️ <span id="unmatched-cnt">0</span> eşləşdirilməmiş ödəniş — <span class="match-link" onclick="runAutoMatch()">Avtomatik eşləş (FIFO)</span>
+    </div>
+
+    <div class="chips" id="pay-chips">
+      <span class="chip active" onclick="setPayFilter(this,'hamisi')">Hamısı</span>
+      <span class="chip" onclick="setPayFilter(this,'unmatched')">Eşləşdirilməmiş</span>
+      <span class="chip" onclick="setPayFilter(this,'matched')">Eşləşdirilmiş</span>
+      <span class="chip" onclick="setPayFilter(this,'avans')">Avans</span>
+    </div>
+
+    <div class="panel-body" id="list-payments"></div>
+  </div>
+
+  <!-- BOTTOM: XÜLASƏ -->
+  <div class="panel panel-bottom" style="border-top:1px solid var(--border)">
+    <div class="panel-head" style="cursor:pointer" onclick="toggleSummary()">
+      <span>📊</span>
+      <h3>Əvəzləşmə Xülasəsi — <span id="sum-period">Yanvar 2026</span></h3>
+      <span id="sum-toggle" style="margin-left:auto;color:var(--muted)">▲</span>
+    </div>
+    <div id="sum-body">
+      <div id="sum-warnings"></div>
+      <div class="sum-grid">
+        <div class="sum-item"><div class="sum-lbl">Cari dövr əvəzləşdiriləcək</div><div class="sum-val green" id="sv-cari">0.00 ₼</div></div>
+        <div class="sum-item"><div class="sum-lbl">Köhnə dövr əvəzləşdiriləcək</div><div class="sum-val cyan" id="sv-kohne">0.00 ₼</div></div>
+        <div class="sum-item"><div class="sum-lbl">Avans qaimə üzrə</div><div class="sum-val" style="color:var(--purple)" id="sv-avans">0.00 ₼</div></div>
+        <div class="sum-item" style="border:1px solid var(--accent2)"><div class="sum-lbl">CƏMİ ƏVƏZLƏŞDİRİLƏCƏK (1016)</div><div class="sum-val green" id="sv-total">0.00 ₼</div></div>
+        <div class="sum-item"><div class="sum-lbl">Depozit ödənilməmiş (gözləyir)</div><div class="sum-val yellow" id="sv-goz">0.00 ₼</div></div>
+        <div class="sum-item"><div class="sum-lbl">Sənədsiz avans depozit</div><div class="sum-val" style="color:var(--orange)" id="sv-san">0.00 ₼</div></div>
+        <div class="sum-item"><div class="sum-lbl">Qismən ödənilmiş qaimə ƏDV</div><div class="sum-val yellow" id="sv-qis">0.00 ₼</div></div>
+        <div class="sum-item"><div class="sum-lbl">Eşləşmə faizi</div><div class="sum-val" id="sv-pct">0%</div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ FIFO MODAL ══ -->
+<div class="modal-overlay" id="modal-fifo">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-fifo')">✕</button>
+    <h3>⚡ Avtomatik Eşləşdirmə Təklifi (FIFO)</h3>
+    <p style="font-size:.78rem;color:var(--muted);margin-bottom:14px">Sistem aşağıdakı paylaşdırmanı tövsiyə edir. Təsdiq edin və ya dəyişdirin:</p>
+    <div id="fifo-proposals"></div>
+    <div style="margin-top:16px;display:flex;gap:8px">
+      <button class="btn success" onclick="confirmFifo()">✅ Hamısını Təsdiqlə</button>
+      <button class="btn ghost" onclick="closeModal('modal-fifo')">Ləğv et</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ INVOICE DETAIL MODAL ══ -->
+<div class="modal-overlay" id="modal-inv">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-inv')">✕</button>
+    <h3 id="modal-inv-title">Qaimə Detalları</h3>
+    <div id="modal-inv-body"></div>
+  </div>
+</div>
+
+<!-- ══ MANUAL MATCH MODAL ══ -->
+<div class="modal-overlay" id="modal-match">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-match')">✕</button>
+    <h3>🔗 Əl ilə Eşləşdirmə</h3>
+    <p style="font-size:.78rem;color:var(--muted);margin-bottom:12px">Ödənişi qaiməyə bağlayın:</p>
+    <div id="modal-match-body"></div>
+    <div style="margin-top:14px;display:flex;gap:8px">
+      <button class="btn primary" onclick="confirmManualMatch()">Bağla</button>
+      <button class="btn ghost" onclick="closeModal('modal-match')">Ləğv et</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FINAL REPORT MODAL ══ -->
+<div class="modal-overlay" id="modal-final">
+  <div class="modal" style="max-width:620px">
+    <button class="modal-close" onclick="closeModal('modal-final')">✕</button>
+    <h3>📋 Bəyannamə Xülasəsi</h3>
+    <div id="modal-final-body"></div>
+    <div style="margin-top:16px;display:flex;gap:8px">
+      <button class="btn success" onclick="exportAvaz()">⬇️ Əvəzləşdirmə Excel</button>
+      <button class="btn ghost" onclick="closeModal('modal-final')">Bağla</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ AVANS BAĞLA NOTIFICATION ══ -->
+<div id="notif-avans" style="display:none;position:fixed;bottom:20px;right:20px;background:var(--card);border:1px solid var(--cyan);border-radius:12px;padding:16px 18px;max-width:320px;z-index:700;box-shadow:0 4px 24px rgba(0,0,0,.4)">
+  <div style="font-size:.8rem;font-weight:700;color:var(--cyan);margin-bottom:6px">💡 Avans Uyğunluğu Tapıldı</div>
+  <div id="notif-avans-text" style="font-size:.76rem;color:var(--muted);margin-bottom:10px"></div>
+  <div style="display:flex;gap:8px">
+    <button class="btn success sm" onclick="acceptAvansLink()">Bağla</button>
+    <button class="btn ghost sm" onclick="document.getElementById('notif-avans').style.display='none'">Sonra</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--accent2);color:#fff;padding:10px 20px;border-radius:8px;font-size:.8rem;z-index:900"></div>
+
+<script>
+// ══════════════════════════════════════════════════════
+//  DATA STORE
+// ══════════════════════════════════════════════════════
+let state = {
+  period: '01-2026',
+  invoices: [],   // {id, no, seriya, tarix, dovr, satici, voen, edvMebleg, edvOdendi, status, avans, avansLink, group}
+  payments: [],   // {id, tarix, mebleg, qaliqi, odeyiciVoen, qebulVoen, tevinat, nov, matchedTo, status}
+  invFilter: 'hamisi',
+  payFilter: 'hamisi',
+  invSearch: '',
+  paySearch: '',
+  pendingFifo: [],   // [{payId, invId, amount}]
+  selectedPayId: null,
+};
+
+// ── SAMPLE DATA (3V MMC real data) ──
+function loadSampleData() {
+  const now = state.period; // '01-2026'
+  state.invoices = [
+    // Cari dövr (Yanvar 2026)
+    {id:'i1',no:'10711345',seriya:'MT2601',tarix:'14-01-2026',dovr:'01-2026',satici:'MİRE-5 MMC',voen:'1906496911',edvMebleg:900.00,edvOdendi:900.00,status:'tam',avans:false,avansLink:null,group:'cari'},
+    {id:'i2',no:'11704067',seriya:'MT2601',tarix:'27-01-2026',dovr:'01-2026',satici:'FACİLİTY MANAGEMENT GROUP',voen:'1403645031',edvMebleg:756.61,edvOdendi:756.61,status:'tam',avans:false,avansLink:null,group:'cari'},
+    {id:'i3',no:'11463630',seriya:'MT2601',tarix:'29-01-2026',dovr:'01-2026',satici:'ALAZAN TEKSTİL MMC',voen:'1309355061',edvMebleg:540.00,edvOdendi:270.00,status:'qismen',avans:false,avansLink:null,group:'cari'},
+    {id:'i4',no:'11521890',seriya:'MT2601',tarix:'29-01-2026',dovr:'01-2026',satici:'LUKOIL-AZƏRBAYCAN QSC',voen:'9900006931',edvMebleg:72.00,edvOdendi:36.00,status:'qismen',avans:false,avansLink:null,group:'cari'},
+    {id:'i5',no:'11600340',seriya:'MT2601',tarix:'20-01-2026',dovr:'01-2026',satici:'DESTEC GROUP MMC',voen:'1402935761',edvMebleg:77.40,edvOdendi:77.40,status:'tam',avans:false,avansLink:null,group:'cari'},
+    {id:'i6',no:'11700210',seriya:'MT2601',tarix:'15-01-2026',dovr:'01-2026',satici:'ASSETS MMC',voen:'2004970411',edvMebleg:180.00,edvOdendi:0,status:'gozleyir',avans:false,avansLink:null,group:'cari'},
+    {id:'i7',no:'11800550',seriya:'MT2601',tarix:'10-01-2026',dovr:'01-2026',satici:'ROYAL FOODS MMC',voen:'1302000471',edvMebleg:340.00,edvOdendi:0,status:'gozleyir',avans:false,avansLink:null,group:'cari'},
+    // Köhnə dövr (Dekabr 2025 — əvəzləşdirilməmiş qalanlar)
+    {id:'i8',no:'12074787',seriya:'MT2511',tarix:'18-11-2025',dovr:'11-2025',satici:'MİRE-5 MMC',voen:'1906496911',edvMebleg:854.24,edvOdendi:854.24,status:'tam',avans:false,avansLink:null,group:'kohne'},
+    {id:'i9',no:'12316836',seriya:'MT2512',tarix:'05-12-2025',dovr:'12-2025',satici:'MİRE-5 MMC',voen:'1906496911',edvMebleg:540.00,edvOdendi:540.00,status:'avazlesdirilib',avans:false,avansLink:null,group:'kohne'},
+    {id:'i10',no:'10181843',seriya:'MT2511',tarix:'22-11-2025',dovr:'11-2025',satici:'FACİLİTY MANAGEMENT GROUP',voen:'1403645031',edvMebleg:2610.00,edvOdendi:2610.00,status:'avazlesdirilib',avans:false,avansLink:null,group:'kohne'},
+    {id:'i11',no:'10001748',seriya:'MT2506',tarix:'20-06-2025',dovr:'06-2025',satici:'FACİLİTY MANAGEMENT GROUP',voen:'1403645031',edvMebleg:500.00,edvOdendi:500.00,status:'avazlesdirilib',avans:false,avansLink:null,group:'kohne'},
+    {id:'i12',no:'09876543',seriya:'MT2510',tarix:'15-10-2025',dovr:'10-2025',satici:'ROYAL FOODS MMC',voen:'1302000471',edvMebleg:423.00,edvOdendi:0,status:'kohnə',avans:false,avansLink:null,group:'kohne'},
+    // Avans (AA seriyalı)
+    {id:'i13',no:'AA2601-001',seriya:'AA2601',tarix:'05-01-2026',dovr:'01-2026',satici:'ALAZAN TEKSTİL MMC',voen:'1309355061',edvMebleg:270.00,edvOdendi:270.00,status:'tam',avans:true,avansLink:null,group:'avans'},
+    {id:'i14',no:'AA2601-002',seriya:'AA2601',tarix:'12-01-2026',dovr:'01-2026',satici:'YENI TEDARİKÇİ MMC',voen:'1500200311',edvMebleg:180.00,edvOdendi:0,status:'gozleyir',avans:true,avansLink:null,group:'avans'},
+  ];
+
+  state.payments = [
+    {id:'p1',tarix:'29-01-2026',mebleg:900.00,qaliqi:0,odeyiciVoen:'2302351311',qebulVoen:'1906496911',qebulAd:'MİRE-5 MMC',tevinat:'MT2601 10711345',nov:'tam',matchedTo:'i1',status:'matched'},
+    {id:'p2',tarix:'27-01-2026',mebleg:756.61,qaliqi:0,odeyiciVoen:'2302351311',qebulVoen:'1403645031',qebulAd:'FACİLİTY MANAGEMENT',tevinat:'MT2601 11704067',nov:'tam',matchedTo:'i2',status:'matched'},
+    {id:'p3',tarix:'29-01-2026',mebleg:270.00,qaliqi:0,odeyiciVoen:'2302351311',qebulVoen:'1309355061',qebulAd:'ALAZAN TEKSTİL',tevinat:'AA2601 avans',nov:'qismen',matchedTo:'i13',status:'matched'},
+    {id:'p4',tarix:'29-01-2026',mebleg:36.00,qaliqi:0,odeyiciVoen:'2302351311',qebulVoen:'9900006931',qebulAd:'LUKOIL-AZ',tevinat:'MT2601 qismən',nov:'qismen',matchedTo:'i4',status:'matched'},
+    {id:'p5',tarix:'20-01-2026',mebleg:77.40,qaliqi:0,odeyiciVoen:'2302351311',qebulVoen:'1402935761',qebulAd:'DESTEC GROUP',tevinat:'MT2601 11600340',nov:'tam',matchedTo:'i5',status:'matched'},
+    {id:'p6',tarix:'08-01-2026',mebleg:423.00,qaliqi:0,odeyiciVoen:'2302351311',qebulVoen:'1302000471',qebulAd:'ROYAL FOODS',tevinat:'',nov:'tam',matchedTo:null,status:'unmatched'},
+    {id:'p7',tarix:'03-01-2026',mebleg:350.00,qaliqi:350,odeyiciVoen:'2302351311',qebulVoen:'2004970411',qebulAd:'ASSETS MMC',tevinat:'',nov:'tam',matchedTo:null,status:'unmatched'},
+    {id:'p8',tarix:'31-12-2025',mebleg:200.00,qaliqi:200,odeyiciVoen:'2302351311',qebulVoen:'',qebulAd:'Naməlum',tevinat:'avans',nov:'avans',matchedTo:null,status:'avans'},
+  ];
+  renderAll();
+  updateSummary();
+}
+
+// ══════════════════════════════════════════════════════
+//  RENDER INVOICES
+// ══════════════════════════════════════════════════════
+function renderAll() {
+  renderInvoices('cari');
+  renderInvoices('kohne');
+  renderInvoices('avans');
+  renderPayments();
+  updateCounts();
+}
+
+function statusLabel(s) {
+  const m = {
+    gozleyir:'Gözləyir', qismen:'Qismən ödənilib', tam:'Tam ödənilib',
+    avazlesdirilib:'Əvəzləşdirilib', 'qismən-avaz':'Qismən əvəzləşdirilib',
+    kohnə:'Köhnə (vaxtı keçmiş)', avans:'Avans'
+  };
+  return m[s]||s;
+}
+function statusClass(s) {
+  if(s==='gozleyir')return'gozleyir';
+  if(s==='qismen')return'qismen';
+  if(s==='tam')return'tam';
+  if(s==='avazlesdirilib')return'avazlesdirilib';
+  if(s==='kohnə')return'kohnə';
+  if(s==='avans')return'avans';
+  return'gozleyir';
+}
+
+function renderInvoices(group) {
+  const el = document.getElementById('list-'+group);
+  let list = state.invoices.filter(i=>i.group===group);
+  if(state.invSearch) list=list.filter(i=>JSON.stringify(i).toLowerCase().includes(state.invSearch));
+  if(state.invFilter!=='hamisi') list=list.filter(i=>i.status===state.invFilter);
+  if(list.length===0){el.innerHTML='<div class="empty"><div class="icon">📭</div>Qaimə tapılmadı</div>';return;}
+  el.innerHTML=list.map(inv=>{
+    const pct=inv.edvMebleg>0?Math.round(inv.edvOdendi/inv.edvMebleg*100):0;
+    const isOld=inv.group==='kohne'&&inv.status!=='avazlesdirilib';
+    const amtClass=inv.status==='tam'||inv.status==='avazlesdirilib'?'paid':inv.status==='qismen'?'partial':'unpaid';
+    const avansTag=inv.avans?'<span class="badge avans">AA</span> ':'';
+    return `<div class="inv-row ${isOld?'warn-old':''}" onclick="openInvDetail('${inv.id}')">
+      <div>
+        <div class="inv-no">${inv.seriya} ${inv.no}</div>
+        <div style="font-size:.65rem;color:var(--muted);margin-top:2px">${inv.tarix}</div>
+        ${inv.avans?'<span class="badge avans" style="margin-top:3px">Avans</span>':''}
+      </div>
+      <div>
+        <div class="inv-name">${inv.satici}</div>
+        <div class="inv-sub">VÖEN: ${inv.voen}</div>
+        <div style="margin-top:4px">${avansTag}<span class="badge ${statusClass(inv.status)}">${statusLabel(inv.status)}</span></div>
+        ${pct<100&&pct>0?`<div class="prog"><div class="prog-fill" style="width:${pct}%"></div></div>`:'' }
+      </div>
+      <div style="text-align:right">
+        <div class="inv-amount ${amtClass}">${fmt(inv.edvMebleg)} ₼</div>
+        <div class="inv-icons">Ödəndi: ${fmt(inv.edvOdendi)} ₼</div>
+        ${inv.status==='gozleyir'||inv.status==='qismen'?`<button class="btn ghost sm" style="margin-top:4px" onclick="event.stopPropagation();manualMatch('${inv.id}')">🔗 Bağla</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════
+//  RENDER PAYMENTS
+// ══════════════════════════════════════════════════════
+function renderPayments() {
+  const el=document.getElementById('list-payments');
+  let list=[...state.payments];
+  if(state.payFilter==='unmatched') list=list.filter(p=>p.status==='unmatched');
+  else if(state.payFilter==='matched') list=list.filter(p=>p.status==='matched');
+  else if(state.payFilter==='avans') list=list.filter(p=>p.status==='avans');
+  if(state.paySearch) list=list.filter(p=>JSON.stringify(p).toLowerCase().includes(state.paySearch));
+  // Unmatched first
+  list.sort((a,b)=>(a.status==='unmatched'?-1:1));
+  const unmatched=state.payments.filter(p=>p.status==='unmatched').length;
+  const ua=document.getElementById('unmatched-alert');
+  const uc=document.getElementById('unmatched-cnt');
+  if(unmatched>0){ua.style.display='flex';uc.textContent=unmatched;}
+  else{ua.style.display='none';}
+
+  if(list.length===0){el.innerHTML='<div class="empty"><div class="icon">💳</div>Ödəniş tapılmadı</div>';return;}
+  el.innerHTML=list.map(p=>{
+    const inv=p.matchedTo?state.invoices.find(i=>i.id===p.matchedTo):null;
+    const matchInfo=inv?`<span class="match-link">→ ${inv.seriya} ${inv.no} (${inv.satici.substring(0,20)})</span>`:'<span style="color:var(--yellow);font-size:.68rem">⚠️ Eşləşdirilməmiş</span>';
+    const novBadge={tam:'<span class="badge tam">Tam</span>',qismen:'<span class="badge qismen">Qismən</span>',avans:'<span class="badge avans">Avans</span>'}[p.nov]||'';
+    return `<div class="pay-row ${p.status==='unmatched'?'unmatched':'matched'}" onclick="openPayDetail('${p.id}')">
+      <div>
+        <div class="pay-date">${p.tarix}</div>
+        <div style="margin-top:3px">${novBadge}</div>
+      </div>
+      <div>
+        <div style="font-size:.75rem;font-weight:600">${p.qebulAd||'—'}</div>
+        <div class="pay-who">VÖEN: ${p.qebulVoen||'—'}</div>
+        <div class="pay-ref">${p.tevinat||'(Təyinat yoxdur)'}</div>
+        <div class="pay-match">${matchInfo}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="pay-amount">${fmt(p.mebleg)} ₼</div>
+        ${p.qaliqi>0?`<div style="font-size:.68rem;color:var(--yellow)">Qalıq: ${fmt(p.qaliqi)} ₼</div>`:''}
+        ${p.status==='unmatched'?`<button class="btn warn sm" style="margin-top:4px" onclick="event.stopPropagation();manualMatchFromPay('${p.id}')">Bağla</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════
+//  MATCHING ALGORITHM
+// ══════════════════════════════════════════════════════
+function runAutoMatch() {
+  const proposals = [];
+  const unmatched = state.payments.filter(p=>p.status==='unmatched');
+  
+  unmatched.forEach(pay => {
+    // LEVEL 1: Direct match by reference
+    if(pay.tevinat && pay.tevinat.trim()!=='') {
+      const ref=pay.tevinat.replace(/\s+/g,'').toUpperCase();
+      const inv=state.invoices.find(i=>{
+        const key=(i.seriya+i.no).replace(/\s+/g,'').toUpperCase();
+        return ref.includes(key)||key.includes(ref.substring(0,8));
+      });
+      if(inv && inv.status!=='avazlesdirilib') {
+        proposals.push({payId:pay.id,invId:inv.id,amount:Math.min(pay.mebleg,inv.edvMebleg-inv.edvOdendi),level:1,reason:'Birbaşa (təyinat üzrə)'});
+        return;
+      }
+    }
+    // LEVEL 2: FIFO auto-allocate
+    const pool = state.invoices
+      .filter(i=>i.status!=='avazlesdirilib'&&i.edvMebleg>i.edvOdendi)
+      .sort((a,b)=>a.tarix.split('-').reverse().join('')-b.tarix.split('-').reverse().join(''));
+    let remaining=pay.mebleg;
+    pool.forEach(inv=>{
+      if(remaining<=0)return;
+      const needed=inv.edvMebleg-inv.edvOdendi;
+      const allocate=Math.min(remaining,needed);
+      if(allocate>0) {
+        proposals.push({payId:pay.id,invId:inv.id,amount:allocate,level:2,reason:'FIFO avtomatik (ən köhnə qaimə)'});
+        remaining-=allocate;
+      }
+    });
+    // LEVEL 3: Avans
+    if(remaining>0) {
+      proposals.push({payId:pay.id,invId:null,amount:remaining,level:3,reason:'Avans (qaimə yoxdur)'});
+    }
+  });
+
+  if(proposals.length===0){toast('✅ Eşləşdirilməmiş ödəniş yoxdur');return;}
+  state.pendingFifo=proposals;
+  showFifoModal(proposals);
+}
+
+function showFifoModal(proposals) {
+  const el=document.getElementById('fifo-proposals');
+  el.innerHTML=proposals.map((p,idx)=>{
+    const pay=state.payments.find(x=>x.id===p.payId);
+    const inv=p.invId?state.invoices.find(x=>x.id===p.invId):null;
+    const levelIcon=['','1️⃣','2️⃣','3️⃣'][p.level];
+    const levelBadge=p.level===1?'<span class="badge tam">Birbaşa</span>':p.level===2?'<span class="badge qismen">FIFO</span>':'<span class="badge avans">Avans</span>';
+    return `<div class="fifo-row">
+      ${levelBadge}
+      <div style="flex:1">
+        <div style="font-size:.76rem;font-weight:600">💳 ${fmt(pay.mebleg)} ₼ (${pay.tarix}) → ${inv?`📋 ${inv.seriya} ${inv.no} (${fmt(p.amount)} ₼)` : '📌 Avans kimi qeyd'}</div>
+        <div style="font-size:.68rem;color:var(--muted);margin-top:2px">${p.reason}</div>
+      </div>
+      <button class="btn danger sm" onclick="removeFifo(${idx})">Sil</button>
+    </div>`;
+  }).join('');
+  document.getElementById('modal-fifo').classList.add('show');
+}
+
+function removeFifo(idx) {state.pendingFifo.splice(idx,1);showFifoModal(state.pendingFifo);}
+
+function confirmFifo() {
+  state.pendingFifo.forEach(p=>{
+    const pay=state.payments.find(x=>x.id===p.payId);
+    const inv=p.invId?state.invoices.find(x=>x.id===p.invId):null;
+    if(!pay)return;
+    if(p.level===3||!inv) {
+      pay.status='avans';return;
+    }
+    inv.edvOdendi+=p.amount;
+    if(inv.edvOdendi>=inv.edvMebleg){inv.status='tam';inv.edvOdendi=inv.edvMebleg;}
+    else{inv.status='qismen';}
+    pay.matchedTo=inv.id;
+    pay.qaliqi=Math.max(0,pay.mebleg-p.amount);
+    pay.status=pay.qaliqi>0?'unmatched':'matched';
+  });
+  state.pendingFifo=[];
+  closeModal('modal-fifo');
+  renderAll();updateSummary();
+  toast('✅ Eşləşdirmə tamamlandı');
+}
+
+// ══════════════════════════════════════════════════════
+//  MANUAL MATCH
+// ══════════════════════════════════════════════════════
+let _matchInvId=null,_matchPayId=null;
+function manualMatch(invId) {
+  _matchInvId=invId;
+  const inv=state.invoices.find(i=>i.id===invId);
+  const unmatched=state.payments.filter(p=>p.status==='unmatched');
+  const el=document.getElementById('modal-match-body');
+  el.innerHTML=`<p style="font-size:.78rem;color:var(--muted);margin-bottom:10px">Qaimə: <strong>${inv.seriya} ${inv.no}</strong> — ${inv.satici} — ƏDV: ${fmt(inv.edvMebleg)} ₼</p>
+  <select id="sel-pay-match" style="width:100%;background:var(--card2);border:1px solid var(--border);color:var(--text);padding:9px;border-radius:7px;font-size:.8rem">
+    ${unmatched.map(p=>`<option value="${p.id}">${p.tarix} — ${fmt(p.mebleg)} ₼ — ${p.qebulAd} (${p.tevinat||'Təyinatsız'})</option>`).join('')}
+  </select>
+  <div style="margin-top:10px"><label style="font-size:.72rem;color:var(--muted)">Bağlanan məbləğ (₼)</label><br>
+  <input type="number" id="match-amount" value="${inv.edvMebleg-inv.edvOdendi}" style="width:100%;background:var(--card2);border:1px solid var(--border);color:var(--text);padding:8px;border-radius:7px;margin-top:4px;font-size:.82rem"></div>`;
+  document.getElementById('modal-match').classList.add('show');
+}
+function manualMatchFromPay(payId) {
+  _matchPayId=payId;
+  const pay=state.payments.find(p=>p.id===payId);
+  const openInvs=state.invoices.filter(i=>i.status!=='avazlesdirilib'&&i.edvMebleg>i.edvOdendi);
+  const el=document.getElementById('modal-match-body');
+  el.innerHTML=`<p style="font-size:.78rem;color:var(--muted);margin-bottom:10px">Ödəniş: <strong>${fmt(pay.mebleg)} ₼</strong> — ${pay.tarix} — ${pay.qebulAd}</p>
+  <select id="sel-inv-match" style="width:100%;background:var(--card2);border:1px solid var(--border);color:var(--text);padding:9px;border-radius:7px;font-size:.8rem">
+    ${openInvs.map(i=>`<option value="${i.id}">${i.seriya} ${i.no} — ${i.satici} — ƏDV: ${fmt(i.edvMebleg)} ₼</option>`).join('')}
+  </select>`;
+  document.getElementById('modal-match').classList.add('show');
+}
+function confirmManualMatch() {
+  if(_matchInvId) {
+    const selPayId=document.getElementById('sel-pay-match')?.value;
+    const amount=parseFloat(document.getElementById('match-amount')?.value)||0;
+    if(!selPayId){closeModal('modal-match');return;}
+    const pay=state.payments.find(p=>p.id===selPayId);
+    const inv=state.invoices.find(i=>i.id===_matchInvId);
+    inv.edvOdendi=Math.min(inv.edvMebleg,inv.edvOdendi+amount);
+    inv.status=inv.edvOdendi>=inv.edvMebleg?'tam':'qismen';
+    pay.matchedTo=inv.id;pay.status='matched';
+  } else if(_matchPayId) {
+    const selInvId=document.getElementById('sel-inv-match')?.value;
+    if(!selInvId){closeModal('modal-match');return;}
+    const pay=state.payments.find(p=>p.id===_matchPayId);
+    const inv=state.invoices.find(i=>i.id===selInvId);
+    inv.edvOdendi=Math.min(inv.edvMebleg,inv.edvOdendi+pay.mebleg);
+    inv.status=inv.edvOdendi>=inv.edvMebleg?'tam':'qismen';
+    pay.matchedTo=inv.id;pay.status='matched';
+  }
+  _matchInvId=null;_matchPayId=null;
+  closeModal('modal-match');renderAll();updateSummary();
+  toast('✅ Əl ilə eşləşdirmə tamamlandı');
+}
+
+// ══════════════════════════════════════════════════════
+//  INVOICE DETAIL MODAL
+// ══════════════════════════════════════════════════════
+function openInvDetail(id) {
+  const inv=state.invoices.find(i=>i.id===id);
+  const linkedPay=state.payments.filter(p=>p.matchedTo===id);
+  document.getElementById('modal-inv-title').textContent=`${inv.seriya} ${inv.no} — ${inv.satici}`;
+  document.getElementById('modal-inv-body').innerHTML=`
+  <table class="modal-table">
+    <tr><th>Tarix</th><td>${inv.tarix}</td></tr>
+    <tr><th>Satıcı</th><td>${inv.satici}</td></tr>
+    <tr><th>VÖEN</th><td>${inv.voen}</td></tr>
+    <tr><th>ƏDV Məbləği</th><td><strong>${fmt(inv.edvMebleg)} ₼</strong></td></tr>
+    <tr><th>Ödənilmiş</th><td>${fmt(inv.edvOdendi)} ₼ (${inv.edvMebleg>0?Math.round(inv.edvOdendi/inv.edvMebleg*100):0}%)</td></tr>
+    <tr><th>Status</th><td><span class="badge ${statusClass(inv.status)}">${statusLabel(inv.status)}</span></td></tr>
+    <tr><th>Növ</th><td>${inv.avans?'<span class="badge avans">Avans qaimə (AA)</span>':'Adi alış qaiməsi'}</td></tr>
+    <tr><th>Dövr</th><td>${inv.dovr}</td></tr>
+  </table>
+  ${linkedPay.length>0?`
+  <div style="margin-top:14px;font-size:.78rem;font-weight:700;margin-bottom:6px">Bağlı ödənişlər:</div>
+  ${linkedPay.map(p=>`<div style="background:var(--card2);border-radius:6px;padding:8px 10px;font-size:.76rem;margin-bottom:6px">
+    💳 ${p.tarix} — ${fmt(p.mebleg)} ₼ — <span style="color:var(--muted)">${p.tevinat||'Təyinatsız'}</span>
+  </div>`).join('')}`:''}
+  <div style="margin-top:14px;display:flex;gap:8px">
+    ${inv.status!=='avazlesdirilib'?`<button class="btn success sm" onclick="markAsReconciled('${inv.id}');closeModal('modal-inv')">✅ Əvəzləşdirilib kimi qeyd et</button>`:''}
+    ${inv.avans&&!inv.avansLink?`<button class="btn ghost sm" onclick="linkAvans('${inv.id}');closeModal('modal-inv')">🔗 Əsl qaiməyə bağla</button>`:''}
+  </div>`;
+  document.getElementById('modal-inv').classList.add('show');
+}
+
+function markAsReconciled(id) {
+  const inv=state.invoices.find(i=>i.id===id);
+  if(inv.edvOdendi>=inv.edvMebleg) {inv.status='avazlesdirilib';}
+  else {inv.status='qismən-avaz';}
+  renderAll();updateSummary();toast('✅ Əvəzləşdirilib statusu verildi');
+}
+
+function openPayDetail(id) {
+  const p=state.payments.find(x=>x.id===id);
+  if(p.status==='unmatched') manualMatchFromPay(id);
+}
+
+// ══════════════════════════════════════════════════════
+//  SUMMARY
+// ══════════════════════════════════════════════════════
+function updateSummary() {
+  const readyInvs=state.invoices.filter(i=>i.status==='tam');
+  const cari=readyInvs.filter(i=>i.group==='cari').reduce((s,i)=>s+i.edvMebleg,0);
+  const kohne=readyInvs.filter(i=>i.group==='kohne').reduce((s,i)=>s+i.edvMebleg,0);
+  const avans=readyInvs.filter(i=>i.group==='avans').reduce((s,i)=>s+i.edvMebleg,0);
+  const total=cari+kohne+avans;
+  const goz=state.invoices.filter(i=>i.status==='gozleyir').reduce((s,i)=>s+(i.edvMebleg-i.edvOdendi),0);
+  const qis=state.invoices.filter(i=>i.status==='qismen').reduce((s,i)=>s+(i.edvMebleg-i.edvOdendi),0);
+  const san=state.payments.filter(p=>p.status==='avans').reduce((s,p)=>s+p.mebleg,0);
+  const allEdv=state.invoices.reduce((s,i)=>s+i.edvMebleg,0);
+  const pct=allEdv>0?Math.round(total/allEdv*100):0;
+
+  document.getElementById('sv-cari').textContent=fmt(cari)+' ₼';
+  document.getElementById('sv-kohne').textContent=fmt(kohne)+' ₼';
+  document.getElementById('sv-avans').textContent=fmt(avans)+' ₼';
+  document.getElementById('sv-total').textContent=fmt(total)+' ₼';
+  document.getElementById('sv-goz').textContent=fmt(goz)+' ₼';
+  document.getElementById('sv-san').textContent=fmt(san)+' ₼';
+  document.getElementById('sv-qis').textContent=fmt(qis)+' ₼';
+  document.getElementById('sv-pct').textContent=pct+'%';
+
+  // Warnings
+  const warnEl=document.getElementById('sum-warnings');
+  const warns=[];
+  const oldUnpaid=state.invoices.filter(i=>i.group==='kohne'&&i.status!=='avazlesdirilib'&&i.status!=='gozleyir');
+  if(oldUnpaid.length>0) warns.push(`<div class="alert-bar warn">⏰ ${oldUnpaid.length} köhnə qaimə 3 aydan artıqdır əvəzləşdirilməyib — ümumi: ${fmt(oldUnpaid.reduce((s,i)=>s+i.edvMebleg,0))} ₼</div>`);
+  if(san>0) warns.push(`<div class="alert-bar err">🚨 ${fmt(san)} ₼ sənədsiz avans depozit ödənişi — sənəd əsası olmadan əvəzləşdirmə mümkün deyil</div>`);
+  if(goz>0) warns.push(`<div class="alert-bar info">💡 ${fmt(goz)} ₼ ƏDV depozit ödənişi gözlənilir (${state.invoices.filter(i=>i.status==='gozleyir').length} qaimə)</div>`);
+  warnEl.innerHTML=warns.join('');
+}
+
+function updateCounts() {
+  document.getElementById('cnt-cari').textContent=state.invoices.filter(i=>i.group==='cari').length;
+  document.getElementById('cnt-kohne').textContent=state.invoices.filter(i=>i.group==='kohne').length;
+  document.getElementById('cnt-avans').textContent=state.invoices.filter(i=>i.group==='avans').length;
+  // Update match stat
+  const total=state.payments.length;
+  const matched=state.payments.filter(p=>p.status==='matched').length;
+  document.getElementById('match-stat').textContent=`${matched}/${total} ödəniş eşləşdirildi`;
+}
+
+// ══════════════════════════════════════════════════════
+//  IMPORT
+// ══════════════════════════════════════════════════════
+function importQaimeler(input) {
+  const f=input.files[0];if(!f)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      let added=0;
+      data.forEach((row,i)=>{
+        if(i<1)return;
+        const no=String(row[3]||'');
+        const seriya=String(row[4]||'');
+        if(!no||!seriya)return;
+        const edv=parseFloat(String(row[9]||'0').replace(',','.'));
+        if(isNaN(edv)||edv<=0)return;
+        const tarix=String(row[1]||'');
+        const dovr=state.period;
+        const isAvans=seriya.startsWith('AA');
+        const isOld=tarix<'01-01-2026'&&state.period==='01-2026';
+        state.invoices.push({
+          id:'imp_'+Date.now()+'_'+i,no,seriya,tarix,dovr,
+          satici:String(row[5]||'Naməlum'),voen:String(row[6]||''),
+          edvMebleg:edv,edvOdendi:0,status:'gozleyir',
+          avans:isAvans,avansLink:null,
+          group:isAvans?'avans':isOld?'kohne':'cari'
+        });
+        added++;
+      });
+      renderAll();updateSummary();
+      toast('✅ '+added+' qaimə idxal edildi');
+      // Check for avans match
+      checkAvansMatch();
+    }catch(err){toast('❌ '+err.message,'err');}
+  };
+  reader.readAsArrayBuffer(f);
+}
+
+function importDepozit(input) {
+  const f=input.files[0];if(!f)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      let added=0;
+      data.forEach((row,i)=>{
+        if(i<1)return;
+        const mebleg=parseFloat(String(row[5]||row[1]||'0').replace(',','.'));
+        if(isNaN(mebleg)||mebleg<=0)return;
+        const sts=String(row[7]||'tam').toLowerCase();
+        if(sts.includes('ləğv')||sts.includes('cancel'))return;
+        state.payments.push({
+          id:'dep_'+Date.now()+'_'+i,
+          tarix:String(row[0]||''),mebleg,qaliqi:mebleg,
+          odeyiciVoen:String(row[2]||'2302351311'),
+          qebulVoen:String(row[3]||''),qebulAd:String(row[3]||''),
+          tevinat:String(row[4]||''),
+          nov:sts.includes('qism')?'qismen':'tam',
+          matchedTo:null,status:'unmatched'
+        });
+        added++;
+      });
+      renderAll();updateSummary();
+      toast('✅ '+added+' depozit ödənişi idxal edildi');
+      // Auto suggest FIFO
+      setTimeout(()=>runAutoMatch(),500);
+    }catch(err){toast('❌ '+err.message,'err');}
+  };
+  reader.readAsArrayBuffer(f);
+}
+
+// ══════════════════════════════════════════════════════
+//  AVANS NOTIFICATION
+// ══════════════════════════════════════════════════════
+let _pendingAvansLink=null;
+function checkAvansMatch() {
+  const avansDeposits=state.payments.filter(p=>p.status==='avans');
+  const openInvs=state.invoices.filter(i=>!i.avans&&i.status==='gozleyir');
+  if(avansDeposits.length>0&&openInvs.length>0) {
+    const d=avansDeposits[0],inv=openInvs[0];
+    _pendingAvansLink={depId:d.id,invId:inv.id};
+    document.getElementById('notif-avans-text').textContent=`${fmt(d.mebleg)} ₼ avans depozit ödənişi "${inv.satici}" — ${inv.seriya} ${inv.no} qaiməsinə uyğun görünür. Bağlansın?`;
+    document.getElementById('notif-avans').style.display='block';
+  }
+}
+function acceptAvansLink() {
+  if(!_pendingAvansLink)return;
+  const dep=state.payments.find(p=>p.id===_pendingAvansLink.depId);
+  const inv=state.invoices.find(i=>i.id===_pendingAvansLink.invId);
+  if(dep&&inv){dep.matchedTo=inv.id;dep.status='matched';inv.edvOdendi=dep.mebleg;inv.status=inv.edvOdendi>=inv.edvMebleg?'tam':'qismen';}
+  document.getElementById('notif-avans').style.display='none';
+  _pendingAvansLink=null;renderAll();updateSummary();toast('✅ Avans ödəniş bağlandı');
+}
+
+// ══════════════════════════════════════════════════════
+//  FINAL REPORT MODAL
+// ══════════════════════════════════════════════════════
+function openFinalModal() {
+  const readyInvs=state.invoices.filter(i=>i.status==='tam'||i.status==='avazlesdirilib');
+  const cari=readyInvs.filter(i=>i.group==='cari');
+  const kohne=readyInvs.filter(i=>i.group==='kohne');
+  const avans=readyInvs.filter(i=>i.group==='avans');
+  const total=readyInvs.reduce((s,i)=>s+i.edvMebleg,0);
+  document.getElementById('modal-final-body').innerHTML=`
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+    <div class="sum-item"><div class="sum-lbl">Cari dövr qaimə ƏDV</div><div class="sum-val green">${fmt(cari.reduce((s,i)=>s+i.edvMebleg,0))} ₼</div><div style="font-size:.65rem;color:var(--muted)">${cari.length} qaimə</div></div>
+    <div class="sum-item"><div class="sum-lbl">Köhnə dövrlərdən</div><div class="sum-val cyan">${fmt(kohne.reduce((s,i)=>s+i.edvMebleg,0))} ₼</div><div style="font-size:.65rem;color:var(--muted)">${kohne.length} qaimə</div></div>
+    <div class="sum-item"><div class="sum-lbl">Avans qaimə ƏDV</div><div class="sum-val" style="color:var(--purple)">${fmt(avans.reduce((s,i)=>s+i.edvMebleg,0))} ₼</div><div style="font-size:.65rem;color:var(--muted)">${avans.length} qaimə</div></div>
+    <div class="sum-item" style="border:1px solid var(--accent2)"><div class="sum-lbl">CƏMİ ƏVƏZLƏŞDİRİLƏCƏK (1016)</div><div class="sum-val green">${fmt(total)} ₼</div></div>
+  </div>
+  <table class="modal-table">
+    <thead><tr><th>#</th><th>Sətir kodu</th><th>Seriya</th><th>Nömrə</th><th>Satıcı</th><th style="text-align:right">ƏDV (₼)</th></tr></thead>
+    <tbody>${readyInvs.map((inv,i)=>`<tr><td>${i+1}</td><td>308</td><td>${inv.seriya}</td><td>${inv.no}</td><td>${inv.satici.substring(0,25)}</td><td style="text-align:right">${fmt(inv.edvMebleg)}</td></tr>`).join('')}
+    <tr style="font-weight:700;background:rgba(99,102,241,.08)"><td colspan="5">CƏMİ</td><td style="text-align:right">${fmt(total)}</td></tr></tbody>
+  </table>`;
+  document.getElementById('modal-final').classList.add('show');
+}
+
+// ══════════════════════════════════════════════════════
+//  EXPORT
+// ══════════════════════════════════════════════════════
+function exportAvaz() {
+  if(typeof XLSX==='undefined'){toast('❌ XLSX kitabxanası yüklənmir','err');return;}
+  const readyInvs=state.invoices.filter(i=>i.status==='tam'||i.status==='avazlesdirilib');
+  const rows=readyInvs.map(inv=>[308,inv.seriya,inv.no,inv.edvMebleg]);
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb,ws,'Avazlesdirme');
+  XLSX.writeFile(wb,'avazlesdirme_'+state.period.replace('-','_')+'.xlsx');
+  closeModal('modal-final');
+  toast('✅ Əvəzləşdirmə faylı yükləndi');
+}
+
+// ══════════════════════════════════════════════════════
+//  FILTERS / UI
+// ══════════════════════════════════════════════════════
+function switchInvTab(btn,id) {
+  document.querySelectorAll('#inv-tabs .tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function setInvFilter(chip,val) {
+  document.querySelectorAll('#inv-chips .chip').forEach(c=>c.classList.remove('active'));
+  chip.classList.add('active');
+  state.invFilter=val;renderAll();
+}
+function setPayFilter(chip,val) {
+  document.querySelectorAll('#pay-chips .chip').forEach(c=>c.classList.remove('active'));
+  chip.classList.add('active');
+  state.payFilter=val;renderPayments();
+}
+function filterInvoices(v){state.invSearch=v.toLowerCase();renderAll();}
+function filterPayments(v){state.paySearch=v.toLowerCase();renderPayments();}
+function changePeriod(){state.period=document.getElementById('sel-ay').value;document.getElementById('sum-period').textContent=document.getElementById('sel-ay').options[document.getElementById('sel-ay').selectedIndex].text;renderAll();updateSummary();}
+function toggleSummary(){const b=document.getElementById('sum-body');b.style.display=b.style.display==='none'?'':'none';document.getElementById('sum-toggle').textContent=b.style.display==='none'?'▼':'▲';}
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+function openAddInvModal(){toast('Əl ilə əlavə — panel üstündəki "Əl ilə" butonuna basın');}
+function openAddPayModal(){toast('Əl ilə ödəniş əlavə etmə tezliklə gəlir');}
+function fmt(n){return Number(n||0).toLocaleString('az',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function toast(msg,type='ok'){const t=document.getElementById('toast');t.textContent=msg;t.style.background=type==='err'?'var(--red)':'var(--accent2)';t.style.display='block';setTimeout(()=>t.style.display='none',3000);}
+
+// ── İNİT ──
+loadSampleData();
+</script>
+</body>
+</html>
