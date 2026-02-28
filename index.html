@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ƏDV Hesabat Paneli — "3V" MMC</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --card: #1a1d2e;
+    --card2: #222538;
+    --accent: #6c63ff;
+    --accent2: #00d4aa;
+    --red: #ff4d6d;
+    --yellow: #ffd166;
+    --text: #e0e0f0;
+    --muted: #8888aa;
+    --border: #2e3155;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  header {
+    background: linear-gradient(135deg, #1a1d2e 0%, #2a1f5e 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 24px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  header .logo { font-size: 2rem; }
+  header h1 { font-size: 1.5rem; font-weight: 700; }
+  header p { color: var(--muted); font-size: 0.875rem; margin-top: 2px; }
+  .badge {
+    margin-left: auto;
+    background: var(--accent);
+    color: #fff;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  /* ── Layout ── */
+  main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
+  .section-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin: 32px 0 14px;
+  }
+  .section-title:first-child { margin-top: 0; }
+
+  /* ── KPI Cards ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+  .kpi {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--accent);
+  }
+  .kpi.green::before { background: var(--accent2); }
+  .kpi.red::before { background: var(--red); }
+  .kpi.yellow::before { background: var(--yellow); }
+  .kpi-label { font-size: 0.75rem; color: var(--muted); margin-bottom: 8px; }
+  .kpi-value { font-size: 1.6rem; font-weight: 700; }
+  .kpi-sub { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+  .kpi.green .kpi-value { color: var(--accent2); }
+  .kpi.red .kpi-value { color: var(--red); }
+  .kpi.yellow .kpi-value { color: var(--yellow); }
+
+  /* ── Two-col ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* ── Card ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .card h3 {
+    font-size: 0.875rem;
+    color: var(--muted);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* ── VAT Flow ── */
+  .vat-flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: var(--card2);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .vat-box {
+    flex: 1;
+    padding: 24px 20px;
+    text-align: center;
+  }
+  .vat-box:not(:last-child) {
+    border-right: 1px solid var(--border);
+  }
+  .vat-box .lbl { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .vat-box .val { font-size: 1.3rem; font-weight: 700; }
+  .vat-box .sub { font-size: 0.7rem; color: var(--muted); margin-top: 4px; }
+  .vat-op { font-size: 1.5rem; color: var(--muted); padding: 0 8px; }
+  .vat-box.out .val { color: var(--red); }
+  .vat-box.inn .val { color: var(--accent2); }
+  .vat-box.result .val { color: var(--yellow); }
+  .vat-box.result { background: rgba(255,209,102,0.06); }
+
+  /* ── Table ── */
+  .tbl-wrap { overflow-x: auto; margin-top: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  th {
+    background: var(--card2);
+    color: var(--muted);
+    font-weight: 600;
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  td {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(46,49,85,0.6);
+    vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(108,99,255,0.06); }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 0.68rem;
+    font-weight: 600;
+  }
+  .tag.ok { background: rgba(0,212,170,0.15); color: var(--accent2); }
+  .tag.sys { background: rgba(108,99,255,0.15); color: var(--accent); }
+
+  /* ── Bank bars ── */
+  .bank-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .bank-name { font-size: 0.78rem; width: 90px; flex-shrink: 0; color: var(--muted); }
+  .bar-wrap { flex: 1; background: var(--card2); border-radius: 4px; height: 8px; overflow: hidden; }
+  .bar { height: 100%; border-radius: 4px; }
+  .bar.in { background: var(--accent2); }
+  .bar.out { background: var(--red); }
+  .bank-val { font-size: 0.78rem; width: 100px; text-align: right; }
+
+  /* ── Progress ── */
+  .progress-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .progress-lbl { font-size: 0.78rem; flex: 1; }
+  .progress-bar-wrap { width: 120px; background: var(--card2); border-radius: 4px; height: 6px; }
+  .progress-bar { height: 100%; border-radius: 4px; background: var(--accent); }
+  .progress-val { font-size: 0.78rem; width: 80px; text-align: right; color: var(--muted); }
+
+  /* ── Footer ── */
+  footer {
+    text-align: center;
+    padding: 24px;
+    color: var(--muted);
+    font-size: 0.75rem;
+    border-top: 1px solid var(--border);
+    margin-top: 48px;
+  }
+
+  /* ── Tabs ── */
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+  .tab {
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    transition: all 0.2s;
+  }
+  .tab.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ── Info row ── */
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .info-item { padding: 10px; background: var(--card2); border-radius: 8px; }
+  .info-item .key { font-size: 0.7rem; color: var(--muted); margin-bottom: 3px; }
+  .info-item .val { font-size: 0.85rem; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">📊</div>
+  <div>
+    <h1>"3V" MMC — ƏDV Hesabat Paneli</h1>
+    <p>VÖEN: 2302351311 &nbsp;|&nbsp; Hesabat dövrü: Noyabr 2025 – Yanvar 2026</p>
+  </div>
+  <div class="badge">Dekabr 2025 ƏDV</div>
+</header>
+
+<main>
+
+  <!-- Company Info -->
+  <div class="section-title">🏢 Şirkət məlumatları</div>
+  <div class="info-grid" style="margin-bottom:0">
+    <div class="info-item"><div class="key">Şirkət adı</div><div class="val">"3V" Məhdud Məsuliyyətli Cəmiyyəti</div></div>
+    <div class="info-item"><div class="key">VÖEN</div><div class="val">2302351311</div></div>
+    <div class="info-item"><div class="key">Fəaliyyət</div><div class="val">Uşaq geyimləri pərakəndə satışı (Panda Kids)</div></div>
+    <div class="info-item"><div class="key">ƏDV Nömrəsi (VD)</div><div class="val">19</div></div>
+  </div>
+
+  <!-- ƏDV Hesabı Axını -->
+  <div class="section-title">⚡ ƏDV Hesabı — Dekabr 2025</div>
+  <div class="vat-flow">
+    <div class="vat-box out">
+      <div class="lbl">Çıxış ƏDV (Satış)</div>
+      <div class="val">29,425.43 ₼</div>
+      <div class="sub">Dövriyyə: 163,474.59 ₼ × 18%</div>
+    </div>
+    <div style="padding:0 4px;color:var(--muted);font-size:1.4rem">−</div>
+    <div class="vat-box inn">
+      <div class="lbl">Giriş ƏDV (Əvəzləşmə)</div>
+      <div class="val">15,858.18 ₼</div>
+      <div class="sub">Qaimə əsasında əvəzləşdirilən</div>
+    </div>
+    <div style="padding:0 4px;color:var(--muted);font-size:1.4rem">=</div>
+    <div class="vat-box result">
+      <div class="lbl">Ödənilməli ƏDV</div>
+      <div class="val">13,567.25 ₼</div>
+      <div class="sub">Büdcəyə ödənilir</div>
+    </div>
+  </div>
+
+  <!-- KPI -->
+  <div class="section-title">📈 Əsas göstəricilər</div>
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-label">Vergi Tutulan Dövriyyə</div>
+      <div class="kpi-value">163,475 ₼</div>
+      <div class="kpi-sub">Dekabr 2025</div>
+    </div>
+    <div class="kpi red">
+      <div class="kpi-label">Hesablanmış ƏDV (18%)</div>
+      <div class="kpi-value">29,425 ₼</div>
+      <div class="kpi-sub">Satışdan tutulan</div>
+    </div>
+    <div class="kpi green">
+      <div class="kpi-label">Əvəzləşdirilən ƏDV</div>
+      <div class="kpi-value">15,858 ₼</div>
+      <div class="kpi-sub">Alışdan geri alınan</div>
+    </div>
+    <div class="kpi yellow">
+      <div class="kpi-label">Büdcəyə ƏDV</div>
+      <div class="kpi-value">13,567 ₼</div>
+      <div class="kpi-sub">Net ödəniş</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Daxil olan qaimə</div>
+      <div class="kpi-value">157</div>
+      <div class="kpi-sub">Noy 2025 – Yan 2026</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Göndərilən qaimə</div>
+      <div class="kpi-value">28</div>
+      <div class="kpi-sub">Noy 2025 – Yan 2026</div>
+    </div>
+    <div class="kpi green">
+      <div class="kpi-label">Ümumi alış (ƏDV ilə)</div>
+      <div class="kpi-value">264,054 ₼</div>
+      <div class="kpi-sub">157 qaimə üzrə</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">ƏDV Sub-uçot Məxaric</div>
+      <div class="kpi-value">29,162 ₼</div>
+      <div class="kpi-sub">Dek 2025 – Yan 2026</div>
+    </div>
+  </div>
+
+  <!-- Tabs: Daxil / Göndərilən -->
+  <div class="section-title">🧾 Qaimə-fakturalar</div>
+  <div class="card">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab(event,'daxil')">📥 Daxil olan (157 qaimə)</button>
+      <button class="tab" onclick="switchTab(event,'gond')">📤 Göndərilən (28 qaimə)</button>
+    </div>
+
+    <!-- Daxil olan -->
+    <div id="tab-daxil" class="tab-content active">
+      <div class="section-title" style="margin-top:0">Top Təchizatçılar</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Təchizatçı</th>
+              <th>VÖEN</th>
+              <th class="num">Yekun (₼)</th>
+              <th class="num">ƏDV (₼)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>FACİLİTY MANAGEMENT GROUP MMC</td><td>1403645031</td><td class="num">75,509.75</td><td class="num">~13,592</td></tr>
+            <tr><td>MİRE-5 MMC</td><td>1906496911</td><td class="num">64,289.81</td><td class="num">~11,572</td></tr>
+            <tr><td>ROYAL FOODS MMC</td><td>—</td><td class="num">23,839.25</td><td class="num">~4,291</td></tr>
+            <tr><td>ALAZAN TEKSTİL MMC</td><td>1309355061</td><td class="num">10,384.00</td><td class="num">~1,869</td></tr>
+            <tr><td>ŞƏRUR-3 ŞF</td><td>—</td><td class="num">10,000.00</td><td class="num">~1,800</td></tr>
+            <tr><td>PN AZERBAİJAN MMC</td><td>1702495521</td><td class="num">8,206.32</td><td class="num">~1,477</td></tr>
+            <tr><td>HAFİZ XUDAVERDİYEV</td><td>—</td><td class="num">7,300.00</td><td class="num">~1,314</td></tr>
+            <tr><td>EVRO TRIDE MMC</td><td>8200332331</td><td class="num">7,286.33</td><td class="num">~1,312</td></tr>
+            <tr><td>SSG MMC</td><td>1701631261</td><td class="num">5,363.95</td><td class="num">~965</td></tr>
+            <tr><td>EL-PLASTİK MMC</td><td>—</td><td class="num">4,605.40</td><td class="num">~829</td></tr>
+            <tr style="font-weight:700;background:rgba(108,99,255,0.08)">
+              <td colspan="2">Cəmi (157 qaimə)</td>
+              <td class="num">264,054.41</td>
+              <td class="num">35,277.54</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:0.72rem;color:var(--muted);margin-top:12px">
+        ⚠️ Əvəzləşdirilən: 15,858.18 ₼ (cəmi ƏDV-nin 44.9%-i) — qalan qaimələr ya ƏDV-dən azad, ya da növbəti aya keçirilmişdir.
+      </p>
+    </div>
+
+    <!-- Göndərilən -->
+    <div id="tab-gond" class="tab-content">
+      <div class="section-title" style="margin-top:0">Müştərilər / Alıcılar</div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Alıcı</th>
+              <th>VÖEN</th>
+              <th>Qaimə seriyası</th>
+              <th>Məzmun</th>
+              <th class="num">Yekun (₼)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>ELLAB MMC (aylıq icarə + kommunal × 20 qaimə)</td><td>1006738611</td><td>MT2510, MT2511, MT2601</td><td>İcarə, su, elektrik, qaz, xidmət</td><td class="num">~225,000+</td></tr>
+            <tr><td>UPC UNİVERSAL MMC</td><td>—</td><td>MQ seriası</td><td>Malların qaytarılması</td><td class="num">—</td></tr>
+            <tr><td>BAKI MEXANİKA VƏ ELEKTRONİKA MMC</td><td>1501252091</td><td>MQ2601</td><td>Mal qaytarma — TB 11/25</td><td class="num">236.00</td></tr>
+            <tr><td>ORTAQ DƏYƏRLƏR İCTİMAİ BİRLİYİ</td><td>—</td><td>MT seriası</td><td>Xidmət</td><td class="num">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bank hesablar -->
+  <div class="section-title">🏦 Bank Hesabları (Dek 2025 – Yan 2026)</div>
+  <div class="two-col">
+    <div class="card">
+      <h3>🏛️ AIIB Bank — AZ08AIIB...8112</h3>
+      <div class="bank-row">
+        <span class="bank-name">Daxilolma</span>
+        <div class="bar-wrap"><div class="bar in" style="width:100%"></div></div>
+        <span class="bank-val">546,573 ₼</span>
+      </div>
+      <div class="bank-row">
+        <span class="bank-name">Xaricetmə</span>
+        <div class="bar-wrap"><div class="bar out" style="width:100.4%"></div></div>
+        <span class="bank-val">549,004 ₼</span>
+      </div>
+      <div class="bank-row">
+        <span class="bank-name">POS satış</span>
+        <div class="bar-wrap"><div class="bar" style="width:52%;background:var(--accent)"></div></div>
+        <span class="bank-val">282,896 ₼</span>
+      </div>
+      <div style="margin-top:12px;font-size:0.75rem;color:var(--muted)">
+        İlkin: 3,765.67 ₼ &nbsp;→&nbsp; Son: <strong style="color:var(--text)">1,335.08 ₼</strong><br>
+        Əməliyyat: 1,394 &nbsp;|&nbsp; Dövr: 01.12.2025 – 28.02.2026
+      </div>
+    </div>
+    <div class="card">
+      <h3>🏛️ İBAZ Bank — AZ62IBAZ...8120</h3>
+      <div class="bank-row">
+        <span class="bank-name">Daxilolma</span>
+        <div class="bar-wrap"><div class="bar in" style="width:100%"></div></div>
+        <span class="bank-val">347,071 ₼</span>
+      </div>
+      <div class="bank-row">
+        <span class="bank-name">Xaricetmə</span>
+        <div class="bar-wrap"><div class="bar out" style="width:99.96%"></div></div>
+        <span class="bank-val">346,944 ₼</span>
+      </div>
+      <div class="bank-row">
+        <span class="bank-name">USD alışı</span>
+        <div class="bar-wrap"><div class="bar" style="width:38%;background:var(--yellow)"></div></div>
+        <span class="bank-val">133,450 ₼</span>
+      </div>
+      <div style="margin-top:12px;font-size:0.75rem;color:var(--muted)">
+        İlkin: 81.82 ₼ &nbsp;→&nbsp; Son: <strong style="color:var(--text)">208.82 ₼</strong><br>
+        Əməliyyat: 608 &nbsp;|&nbsp; Dövr: 01.12.2025 – 31.01.2026
+      </div>
+    </div>
+  </div>
+
+  <!-- ƏDV Sub-uçot -->
+  <div class="section-title">🔒 ƏDV Sub-Uçot Hesabı (Dek 2025 – Yan 2026)</div>
+  <div class="two-col">
+    <div class="card">
+      <h3>📊 Ümumi vəziyyət</h3>
+      <div class="bank-row">
+        <span class="bank-name">Mədaxil</span>
+        <div class="bar-wrap"><div class="bar in" style="width:22%"></div></div>
+        <span class="bank-val" style="color:var(--accent2)">6,364 ₼</span>
+      </div>
+      <div class="bank-row">
+        <span class="bank-name">Məxaric</span>
+        <div class="bar-wrap"><div class="bar out" style="width:100%"></div></div>
+        <span class="bank-val" style="color:var(--red)">29,162 ₼</span>
+      </div>
+      <div style="font-size:0.75rem;color:var(--muted);margin-top:8px">
+        193 əməliyyat &nbsp;|&nbsp; Büdcə kodu: 114111<br>
+        Fərq öz cari hesabından köçürülmüşdür
+      </div>
+    </div>
+    <div class="card">
+      <h3>🏆 Ən çox ƏDV ödənilən</h3>
+      <div class="progress-row"><span class="progress-lbl">FACİLİTY MANAGEMENT</span><div class="progress-bar-wrap"><div class="progress-bar" style="width:100%"></div></div><span class="progress-val">7,337 ₼</span></div>
+      <div class="progress-row"><span class="progress-lbl">MİRE-5 MMC</span><div class="progress-bar-wrap"><div class="progress-bar" style="width:99%"></div></div><span class="progress-val">7,287 ₼</span></div>
+      <div class="progress-row"><span class="progress-lbl">GIN COMPANY MMC</span><div class="progress-bar-wrap"><div class="progress-bar" style="width:38%"></div></div><span class="progress-val">2,790 ₼</span></div>
+      <div class="progress-row"><span class="progress-lbl">TƏBƏSSÜM FİRMASI</span><div class="progress-bar-wrap"><div class="progress-bar" style="width:30%"></div></div><span class="progress-val">2,160 ₼</span></div>
+      <div class="progress-row"><span class="progress-lbl">SSG MMC</span><div class="progress-bar-wrap"><div class="progress-bar" style="width:14%"></div></div><span class="progress-val">990 ₼</span></div>
+    </div>
+  </div>
+
+  <!-- ƏDV Bəyannaməsi Göstəriciləri -->
+  <div class="section-title">📋 ƏDV Bəyannaməsi — VAT_1 (Dekabr 2025)</div>
+  <div class="card">
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Göstərici kodu</th>
+            <th>Adı</th>
+            <th class="num">Məbləğ (₼)</th>
+            <th>Qeyd</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>1001</td><td>Ümumi vergi tutulan dövriyyə</td><td class="num">163,474.59</td><td><span class="tag ok">18%</span></td></tr>
+          <tr><td>1005</td><td>ƏDV-yə cəlb edilən dövriyyə</td><td class="num">163,474.59</td><td></td></tr>
+          <tr><td>1101</td><td>Hesablanmış ƏDV (çıxış)</td><td class="num" style="color:var(--red)">29,425.43</td><td>Satışdan</td></tr>
+          <tr><td>1016</td><td>Əvəzləşdirmə üçün ƏDV</td><td class="num" style="color:var(--accent2)">15,858.18</td><td>Alışdan</td></tr>
+          <tr><td>1023</td><td>Ödənilməli ƏDV</td><td class="num" style="color:var(--yellow);font-weight:700">13,567.25</td><td>Net büdcəyə</td></tr>
+          <tr><td>Büdcə kodu</td><td>ƏDV büdcə</td><td class="num">114111</td><td><span class="tag sys">Dövlət</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Əvəzləşdirmə qaydası -->
+  <div class="section-title">📌 Əvəzləşdirmə Qaydaları (VM Maddə 175)</div>
+  <div class="card">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:0.82rem">
+      <div>
+        <p style="color:var(--accent2);font-weight:700;margin-bottom:8px">✅ Əvəzləşdirilə bilən</p>
+        <ul style="color:var(--muted);list-style:none;line-height:2">
+          <li>✔ Elektron qaimə-faktura ilə alış</li>
+          <li>✔ ƏDV ödəyicisindən alınan</li>
+          <li>✔ Vergiyə cəlb olunan fəaliyyət üçün</li>
+          <li>✔ E-qaimə sistemində qeydiyyatlı</li>
+          <li>✔ 18% standart dərəcə</li>
+        </ul>
+      </div>
+      <div>
+        <p style="color:var(--red);font-weight:700;margin-bottom:8px">❌ Əvəzləşdirilə bilməyən</p>
+        <ul style="color:var(--muted);list-style:none;line-height:2">
+          <li>✘ Şəxsi məqsəd üçün alışlar</li>
+          <li>✘ Kağız qaimə ilə alışlar</li>
+          <li>✘ ƏDV-dən azad fəaliyyət üçün</li>
+          <li>✘ Qeydiyyatsız satıcıdan alış</li>
+          <li>✘ Sığorta, bəzi nəqliyyat xidmətləri</li>
+        </ul>
+      </div>
+    </div>
+    <div style="margin-top:16px;padding:12px;background:rgba(255,209,102,0.08);border:1px solid rgba(255,209,102,0.2);border-radius:8px;font-size:0.78rem">
+      ⚠️ <strong>3V MMC üçün qeyd:</strong> Daxil olan 157 qaimənin cəmi ƏDV-si 35,278 ₼ olsa da, bəyannamədə yalnız 15,858 ₼ əvəzləşdirilmişdir. 
+      Fərq (~19,420 ₼) sığorta, bəzi nəqliyyat xidmətləri və ƏDV-dən azad əməliyyatlardan irəli gəlir. 
+      Əvəzləşdirmə nisbəti: <strong>44.9%</strong>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  "3V" MMC ƏDV Hesabat Paneli &nbsp;·&nbsp; Hazırlandı: 28.02.2026 &nbsp;·&nbsp; Nova AI by OpenClaw
+</footer>
+
+<script>
+function switchTab(e, id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  e.target.classList.add('active');
+  document.getElementById('tab-' + id).classList.add('active');
+}
+</script>
+
+</body>
+</html>
