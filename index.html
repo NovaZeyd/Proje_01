@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mühasibatlıq Veb Paneli</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{
   --bg:#0d0f1a;--sidebar:#111827;--card:#1a1f2e;--card2:#222840;
@@ -445,100 +446,280 @@ tr:hover td{background:rgba(99,102,241,.05);cursor:pointer}
 
     <!-- ══ ƏDV HESABATI ══ -->
     <div class="page" id="page-edv">
-      <div class="sec-title">ƏDV Hesabatı — "3V" MMC</div>
 
-      <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab(this,'edv-dekabr')">Dekabr 2025 ✅</button>
-        <button class="tab-btn" onclick="switchTab(this,'edv-yanvar')">Yanvar 2026 🔄</button>
-        <button class="tab-btn" onclick="switchTab(this,'edv-avaz')">Əvəzləşdirmə</button>
-      </div>
-
-      <!-- Dekabr 2025 -->
-      <div class="tab-pane active" id="edv-dekabr">
-        <div class="alert ok">✅ Bu bəyannamə 18.01.2026 tarixdə vaxtında təqdim edilmişdir.</div>
-
-        <div class="vat-flow">
-          <div class="vf-box out"><div class="vf-lbl">Çıxış ƏDV (Satış)</div><div class="vf-val">29,425.43 ₼</div><div style="font-size:.68rem;color:var(--muted);margin-top:4px">Dövriyyə: 163,474.59 ₼</div></div>
-          <div class="vf-op">−</div>
-          <div class="vf-box inn"><div class="vf-lbl">Giriş ƏDV (Əvəzləşmə)</div><div class="vf-val">15,858.18 ₼</div><div style="font-size:.68rem;color:var(--muted);margin-top:4px">Qaimə əsaslı</div></div>
-          <div class="vf-op">=</div>
-          <div class="vf-box res"><div class="vf-lbl">Ödənilməli ƏDV</div><div class="vf-val">13,567.25 ₼</div><div style="font-size:.68rem;color:var(--muted);margin-top:4px">Büdcəyə ödənildi</div></div>
+      <!-- Period selector -->
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;flex-wrap:wrap">
+        <div>
+          <label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:4px">Hesabat Ayı</label>
+          <select id="edv-ay" onchange="edvPeriodChange()" style="background:var(--card2);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:8px;font-size:.82rem">
+            <option value="12-2025" selected>Dekabr 2025 ✅</option>
+            <option value="01-2026">Yanvar 2026 🔄</option>
+            <option value="02-2026">Fevral 2026 📌</option>
+          </select>
         </div>
-
-        <div class="kpi-row">
-          <div class="kpi"><div class="kpi-lbl">Göstərici 1001</div><div class="kpi-val" style="font-size:1.1rem">163,474 ₼</div><div class="kpi-sub">Ümumi vergi tutulan dövriyyə</div></div>
-          <div class="kpi red"><div class="kpi-lbl">Göstərici 1101</div><div class="kpi-val" style="font-size:1.1rem">29,425 ₼</div><div class="kpi-sub">Hesablanmış ƏDV</div></div>
-          <div class="kpi green"><div class="kpi-lbl">Göstərici 1016</div><div class="kpi-val" style="font-size:1.1rem">15,858 ₼</div><div class="kpi-sub">Əvəzləşdirilən ƏDV</div></div>
-          <div class="kpi yellow"><div class="kpi-lbl">Göstərici 1023</div><div class="kpi-val" style="font-size:1.1rem">13,567 ₼</div><div class="kpi-sub">Ödənilməli ƏDV</div></div>
+        <div>
+          <label style="font-size:.7rem;color:var(--muted);display:block;margin-bottom:4px">Şirkət</label>
+          <select style="background:var(--card2);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:8px;font-size:.82rem">
+            <option>"3V" MMC — 2302351311</option>
+          </select>
         </div>
-
-        <div class="grid2">
-          <div class="card">
-            <div class="card-head"><h3>📤 Göndərilən Qaimələr (28 ədəd)</h3></div>
-            <div class="prog-row"><span class="prog-lbl">ELLAB MMC — İcarə + kommunal</span><div class="prog-bar-wrap"><div class="prog-bar" style="width:85%"></div></div><span class="prog-val">~225,000 ₼</span></div>
-            <div class="prog-row"><span class="prog-lbl">Digər alıcılar</span><div class="prog-bar-wrap"><div class="prog-bar" style="width:15%"></div></div><span class="prog-val">~38,000 ₼</span></div>
-            <div style="margin-top:12px;font-size:.75rem;color:var(--muted)">Seriyalar: MT2510, MT2511, MT2601</div>
-          </div>
-          <div class="card">
-            <div class="card-head"><h3>📥 Daxil Olan Qaimələr (157 ədəd)</h3></div>
-            <div class="prog-row"><span class="prog-lbl">FACİLİTY MANAGEMENT</span><div class="prog-bar-wrap"><div class="prog-bar" style="width:100%"></div></div><span class="prog-val">75,510 ₼</span></div>
-            <div class="prog-row"><span class="prog-lbl">MİRE-5 MMC</span><div class="prog-bar-wrap"><div class="prog-bar" style="width:85%"></div></div><span class="prog-val">64,290 ₼</span></div>
-            <div class="prog-row"><span class="prog-lbl">ROYAL FOODS MMC</span><div class="prog-bar-wrap"><div class="prog-bar" style="width:32%"></div></div><span class="prog-val">23,839 ₼</span></div>
-            <div class="prog-row"><span class="prog-lbl">Digər</span><div class="prog-bar-wrap"><div class="prog-bar" style="width:13%"></div></div><span class="prog-val">~100,000 ₼</span></div>
-          </div>
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <button class="btn primary" onclick="edvHesabla()">🔄 Hesabla</button>
+          <button class="btn ghost" onclick="downloadEdvExcel()">⬇️ Excel</button>
+          <button class="btn success" onclick="alert('e-taxes.gov.az-a göndərmə funksiyası hazırlanır...')">📤 e-taxes</button>
         </div>
       </div>
 
-      <!-- Yanvar 2026 -->
-      <div class="tab-pane" id="edv-yanvar">
-        <div class="alert warn">🔄 Bu bəyannamə hələ hazırlanır. Son tarix: <strong>20 Fevral 2026</strong>.</div>
-        <div class="alert info">📌 Yanvar 2026 ƏDV sub-uçot məxarici: <strong>29,162.33 ₼</strong> — bank çıxarışından götürülüb.</div>
+      <!-- Status alert -->
+      <div id="edv-status-alert" class="alert ok">✅ Dekabr 2025 bəyannaməsi 18.01.2026 tarixdə vaxtında təqdim edilmişdir.</div>
 
-        <div class="card">
-          <div class="card-head"><h3>Yanvar 2026 Əvəzləşdirmə Planı</h3></div>
-          <div class="tbl-wrap">
-            <table>
-              <thead><tr><th>Təchizatçı</th><th>VÖEN</th><th>EQF Seriya</th><th class="num">ƏDV Məbləği (₼)</th><th>Status</th></tr></thead>
-              <tbody>
-                <tr><td>MİRE-5 MMC</td><td>1906496911</td><td>MT2601</td><td class="num">900.00</td><td><span class="badge ok">Ödənildi</span></td></tr>
-                <tr><td>FACİLİTY MANAGEMENT</td><td>1403645031</td><td>MT2601</td><td class="num">756.61</td><td><span class="badge ok">Ödənildi</span></td></tr>
-                <tr><td>ALAZAN TEKSTİL</td><td>1309355061</td><td>MT2601</td><td class="num">540.00</td><td><span class="badge ok">Ödənildi</span></td></tr>
-                <tr><td>DESTEC GROUP</td><td>1402935761</td><td>MT2601</td><td class="num">77.40</td><td><span class="badge ok">Ödənildi</span></td></tr>
-                <tr><td>ASSETS MMC</td><td>2004970411</td><td>MT2601</td><td class="num">180.00</td><td><span class="badge ok">Ödənildi</span></td></tr>
-                <tr><td>LUKOIL-AZƏRBAYCAN</td><td>9900006931</td><td>MT2601</td><td class="num">54.00</td><td><span class="badge ok">Ödənildi</span></td></tr>
-                <tr><td>Digər (193 əməliyyat)</td><td>—</td><td>—</td><td class="num">26,654.32</td><td><span class="badge ok">Ödənildi</span></td></tr>
-                <tr style="font-weight:700;background:rgba(99,102,241,.06)"><td colspan="3">CƏMİ</td><td class="num">29,162.33</td><td><span class="badge ok">✅</span></td></tr>
-              </tbody>
-            </table>
-          </div>
+      <!-- ƏDV Axın -->
+      <div class="vat-flow" style="margin-bottom:20px">
+        <div class="vf-box out"><div class="vf-lbl">Çıxış ƏDV (Satış 1101)</div><div class="vf-val" id="vf-cixis">29,425.43 ₼</div><div style="font-size:.68rem;color:var(--muted);margin-top:4px" id="vf-dovriyye">Dövriyyə: 163,474.59 ₼</div></div>
+        <div class="vf-op">−</div>
+        <div class="vf-box inn"><div class="vf-lbl">Giriş ƏDV (Əvəzləşmə 1016)</div><div class="vf-val" id="vf-giris">15,858.18 ₼</div><div style="font-size:.68rem;color:var(--muted);margin-top:4px" id="vf-giris-sub">3 mənbə üzrə</div></div>
+        <div class="vf-op">=</div>
+        <div class="vf-box res"><div class="vf-lbl">Ödənilməli ƏDV (1023)</div><div class="vf-val" id="vf-net">13,567.25 ₼</div><div style="font-size:.68rem;color:var(--muted);margin-top:4px" id="vf-net-sub">Büdcəyə ödənilib</div></div>
+      </div>
+
+      <!-- 3 KATEQORİYA -->
+      <div class="sec-title">📂 Əvəzləşdirmə Kateqoriyaları üzrə</div>
+
+      <!-- KAT 1: QAİMƏLƏR -->
+      <div class="card" style="border-left:4px solid var(--accent)">
+        <div class="card-head">
+          <h3>📋 1. Qaimələrə görə (ƏDV Depozit Hesabı)</h3>
+          <span class="muted" id="kat1-toplam">15,858.18 ₼</span>
+          <button class="btn ghost" style="font-size:.7rem;padding:4px 10px;margin-left:8px" onclick="document.getElementById('file-kat1').click()">📥 Excel İdxal</button>
+          <input type="file" id="file-kat1" accept=".xlsx,.xls" style="display:none" onchange="importEdvDeposit(this)">
+        </div>
+        <div class="tbl-wrap">
+          <table id="tbl-kat1">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Tarix</th>
+                <th>Təchizatçı</th>
+                <th>VÖEN</th>
+                <th>EQF Seriya</th>
+                <th>EQF Nömrə</th>
+                <th class="num">ƏDV Məbləği (₼)</th>
+                <th>Büdcə Kodu</th>
+                <th>Status</th>
+                <th>Əməliyyat</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-kat1">
+              <tr>
+                <td>1</td><td>29-01-2026</td>
+                <td contenteditable="true">LUKOIL-AZƏRBAYCAN QSC</td>
+                <td>9900006931</td>
+                <td>MT2601</td><td>—</td>
+                <td class="num" contenteditable="true">36.00</td>
+                <td>114111</td>
+                <td><span class="badge ok">✅ Ödənildi</span></td>
+                <td><button onclick="deleteRow(this)" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:.8rem">🗑</button></td>
+              </tr>
+              <tr>
+                <td>2</td><td>29-01-2026</td>
+                <td contenteditable="true">ALAZAN TEKSTİL MMC</td>
+                <td>1309355061</td>
+                <td>MT2601</td><td>11463630</td>
+                <td class="num" contenteditable="true">270.00</td>
+                <td>114111</td>
+                <td><span class="badge ok">✅ Ödənildi</span></td>
+                <td><button onclick="deleteRow(this)" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:.8rem">🗑</button></td>
+              </tr>
+              <tr>
+                <td>3</td><td>29-01-2026</td>
+                <td contenteditable="true">MİRE-5 MMC</td>
+                <td>1906496911</td>
+                <td>MT2601</td><td>10711345</td>
+                <td class="num" contenteditable="true">900.00</td>
+                <td>114111</td>
+                <td><span class="badge ok">✅ Ödənildi</span></td>
+                <td><button onclick="deleteRow(this)" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:.8rem">🗑</button></td>
+              </tr>
+              <tr>
+                <td>4</td><td>27-01-2026</td>
+                <td contenteditable="true">FACİLİTY MANAGEMENT GROUP MMC</td>
+                <td>1403645031</td>
+                <td>MT2601</td><td>11704067</td>
+                <td class="num" contenteditable="true">756.61</td>
+                <td>114111</td>
+                <td><span class="badge ok">✅ Ödənildi</span></td>
+                <td><button onclick="deleteRow(this)" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:.8rem">🗑</button></td>
+              </tr>
+              <tr>
+                <td>5</td><td>14-01-2026</td>
+                <td contenteditable="true">MİRE-5 MMC</td>
+                <td>1906496911</td>
+                <td>MT2512</td><td>12316836</td>
+                <td class="num" contenteditable="true">540.00</td>
+                <td>114111</td>
+                <td><span class="badge ok">✅ Ödənildi</span></td>
+                <td><button onclick="deleteRow(this)" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:.8rem">🗑</button></td>
+              </tr>
+              <tr id="kat1-digər">
+                <td>…</td><td>—</td>
+                <td>Digər (188 əməliyyat)</td>
+                <td>—</td><td>—</td><td>—</td>
+                <td class="num">13,355.57</td>
+                <td>114111</td>
+                <td><span class="badge ok">✅</span></td>
+                <td></td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr style="background:rgba(99,102,241,.08);font-weight:700">
+                <td colspan="6">CƏMİ — Qaimələrə görə əvəzləşdirmə</td>
+                <td class="num" id="kat1-cem">15,858.18 ₼</td>
+                <td colspan="3"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px">
+          <button class="btn ghost" style="font-size:.75rem" onclick="addKat1Row()">+ Sətir əlavə et</button>
+          <button class="btn ghost" style="font-size:.75rem" onclick="recalcKat1()">🔄 Yenidən hesabla</button>
         </div>
       </div>
 
-      <!-- Əvəzləşdirmə -->
-      <div class="tab-pane" id="edv-avaz">
-        <div class="alert info">📤 Əvəzləşdirmə faylı e-taxes.gov.az-a yüklənmək üçün hazırlanır. Format: 4 sütun (Sətir kodu | EQF seriya | EQF nömrə | Məbləğ)</div>
+      <!-- KAT 2: KASSA -->
+      <div class="card" style="border-left:4px solid var(--yellow)">
+        <div class="card-head">
+          <h3>🧾 2. Kassaya görə (Nağd ödənişlər / NKA çekləri)</h3>
+          <span class="muted" id="kat2-toplam">0.00 ₼</span>
+          <button class="btn ghost" style="font-size:.7rem;padding:4px 10px;margin-left:8px" onclick="document.getElementById('file-kat2img').click()">📷 Çek Şəkli</button>
+          <input type="file" id="file-kat2img" accept="image/*" multiple style="display:none" onchange="importKassaImages(this)">
+        </div>
+        <div class="alert warn" style="margin-bottom:12px">⚠️ Kassa çeklərindəki ƏDV əvəzləşdirilməsi üçün VM maddə 175-ə görə bank köçürməsi şərti tətbiq olunmur. Lakin NKA sistemi üzrə çek faktiki ödənişin sübutu sayılır.</div>
 
-        <div class="card">
-          <div class="card-head"><h3>📋 Əvəzləşdirmə Cədvəli — Dekabr 2025</h3><span class="muted">Sətir kodu: 308</span></div>
-          <div class="tbl-wrap">
-            <table>
-              <thead><tr><th>Sətir kodu</th><th>EQF Seriyası</th><th>EQF Nömrəsi</th><th class="num">Məbləğ (₼)</th></tr></thead>
-              <tbody>
-                <tr><td>308</td><td>MT2506</td><td>10001748</td><td class="num">500.00</td></tr>
-                <tr><td>308</td><td>MT2511</td><td>10181843</td><td class="num">2,610.00</td></tr>
-                <tr><td>308</td><td>MT2511</td><td>12074787</td><td class="num">854.24</td></tr>
-                <tr><td>308</td><td>MT2512</td><td>12316836</td><td class="num">540.00</td></tr>
-                <tr><td>308</td><td>MT2601</td><td>10711345</td><td class="num">900.00</td></tr>
-                <tr style="font-weight:700"><td colspan="3">Cəmi əvəzləşdirmə</td><td class="num">15,858.18</td></tr>
-              </tbody>
-            </table>
-          </div>
-          <div style="margin-top:14px;display:flex;gap:10px">
-            <button class="btn primary" onclick="downloadAvaz()">⬇️ Excel Yüklə</button>
-            <button class="btn ghost">📤 e-taxes-ə Göndər</button>
-          </div>
+        <div id="kassa-images" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px"></div>
+
+        <div class="tbl-wrap">
+          <table id="tbl-kat2">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Tarix</th>
+                <th>Satıcı</th>
+                <th>NKA Çek №</th>
+                <th class="num">Cəmi Məbləğ (₼)</th>
+                <th class="num">ƏDV (18%) (₼)</th>
+                <th>Mənbə</th>
+                <th>Əməliyyat</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-kat2">
+              <tr>
+                <td colspan="8" style="text-align:center;color:var(--muted);padding:20px;font-size:.8rem">
+                  📷 Kassa çeki şəkli yükləyin — sistem avtomatik oxuyacaq<br>
+                  <small>və ya aşağıdan əl ilə əlavə edin</small>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr style="background:rgba(245,158,11,.08);font-weight:700">
+                <td colspan="5">CƏMİ — Kassaya görə əvəzləşdirmə</td>
+                <td class="num" id="kat2-cem">0.00 ₼</td>
+                <td colspan="2"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div style="margin-top:10px">
+          <button class="btn ghost" style="font-size:.75rem" onclick="addKat2Row()">+ Əl ilə əlavə et</button>
         </div>
       </div>
+
+      <!-- KAT 3: İDXAL -->
+      <div class="card" style="border-left:4px solid var(--accent2)">
+        <div class="card-head">
+          <h3>🚢 3. İdxal üzrə ödənilmiş ƏDV (Gömrük)</h3>
+          <span class="muted" id="kat3-toplam">0.00 ₼</span>
+          <button class="btn ghost" style="font-size:.7rem;padding:4px 10px;margin-left:8px" onclick="document.getElementById('file-kat3').click()">📥 Excel İdxal</button>
+          <input type="file" id="file-kat3" accept=".xlsx,.xls" style="display:none" onchange="importIdxal(this)">
+        </div>
+        <div class="alert info" style="margin-bottom:12px">📌 İdxalda ödənilmiş ƏDV gömrük bəyannaməsi əsasında əvəzləşdirilir. Sənəd: ƏDV-nin gömrükdə ödənildiyini göstərən gömrük bəyannaməsi.</div>
+        <div class="tbl-wrap">
+          <table id="tbl-kat3">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Tarix</th>
+                <th>Gömrük Bəyannamə №</th>
+                <th>Malın adı</th>
+                <th>İdxalçı ölkə</th>
+                <th class="num">Gömrük Dəyəri (₼)</th>
+                <th class="num">İdxal ƏDV-si (₼)</th>
+                <th>Əməliyyat</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-kat3">
+              <tr>
+                <td colspan="8" style="text-align:center;color:var(--muted);padding:20px;font-size:.8rem">
+                  📥 Gömrük bəyannaməsi Excel faylını yükləyin<br>
+                  <small>Dövlət Gömrük Komitəsi çıxarışı</small>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr style="background:rgba(16,185,129,.08);font-weight:700">
+                <td colspan="6">CƏMİ — İdxal üzrə əvəzləşdirmə</td>
+                <td class="num" id="kat3-cem">0.00 ₼</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div style="margin-top:10px">
+          <button class="btn ghost" style="font-size:.75rem" onclick="addKat3Row()">+ Əl ilə əlavə et</button>
+        </div>
+      </div>
+
+      <!-- YEKİN HESABLAMA -->
+      <div class="card" style="background:linear-gradient(135deg,var(--card),var(--card2));border:1px solid var(--accent)">
+        <div class="card-head"><h3>📊 Yekun ƏDV Əvəzləşdirmə Cədvəli</h3></div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Kateqoriya</th><th>Əsas</th><th class="num">Məbləğ (₼)</th><th>% Payı</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>📋 Qaimələrə görə</td>
+                <td>ƏDV depozit hesabı ödənişləri</td>
+                <td class="num" id="yekun-kat1">15,858.18</td>
+                <td id="yekun-kat1-pct">100.0%</td>
+              </tr>
+              <tr>
+                <td>🧾 Kassaya görə</td>
+                <td>NKA çekləri</td>
+                <td class="num" id="yekun-kat2">0.00</td>
+                <td id="yekun-kat2-pct">0.0%</td>
+              </tr>
+              <tr>
+                <td>🚢 İdxal üzrə</td>
+                <td>Gömrük bəyannaməsi</td>
+                <td class="num" id="yekun-kat3">0.00</td>
+                <td id="yekun-kat3-pct">0.0%</td>
+              </tr>
+              <tr style="font-weight:800;background:rgba(99,102,241,.1);font-size:.95rem">
+                <td colspan="2">🔢 CƏMİ ƏVƏZLƏŞDİRİLƏN ƏDV (Göstərici 1016)</td>
+                <td class="num" id="yekun-total" style="color:var(--accent2)">15,858.18 ₼</td>
+                <td>100%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn primary" onclick="edvHesabla()">🔄 Yenidən Hesabla</button>
+          <button class="btn success" onclick="downloadAvazFull()">⬇️ Əvəzləşdirmə Excel</button>
+          <button class="btn ghost" onclick="downloadEdvExcel()">📊 Tam Hesabat</button>
+          <button class="btn ghost" style="border-color:var(--accent2);color:var(--accent2)" onclick="alert('e-taxes.gov.az XML bəyannaməsi hazırlanır...')">📤 XML Bəyannamə</button>
+        </div>
+      </div>
+
     </div>
 
     <!-- ══ DİGƏR HESABATLAR ══ -->
@@ -843,13 +1024,261 @@ function handleDrop(e,type){
   if(f){handleFile({files:[f]},type);}
 }
 
+// ── EDV PERIOD ──
+const edvData = {
+  '12-2025':{cixis:29425.43,dovriyye:163474.59,giris:15858.18,net:13567.25,status:'ok',statusTxt:'✅ Dekabr 2025 bəyannaməsi 18.01.2026 tarixdə vaxtında təqdim edilmişdir.'},
+  '01-2026':{cixis:0,dovriyye:0,giris:29162.33,net:0,status:'warn',statusTxt:'🔄 Yanvar 2026 bəyannaməsi hazırlanır. Son tarix: 20 Fevral 2026.'},
+  '02-2026':{cixis:0,dovriyye:0,giris:0,net:0,status:'info',statusTxt:'📌 Fevral 2026 bəyannaməsi hələ başlanmamışdır. Son tarix: 20 Mart 2026.'}
+};
+function edvPeriodChange(){
+  const ay=document.getElementById('edv-ay').value;
+  const d=edvData[ay];
+  document.getElementById('vf-cixis').textContent=fmt(d.cixis)+' ₼';
+  document.getElementById('vf-dovriyye').textContent='Dövriyyə: '+fmt(d.dovriyye)+' ₼';
+  document.getElementById('vf-giris').textContent=fmt(d.giris)+' ₼';
+  document.getElementById('vf-net').textContent=fmt(d.net)+' ₼';
+  document.getElementById('vf-net-sub').textContent=d.net>0?'Büdcəyə ödənilib':'Hesablanır...';
+  const al=document.getElementById('edv-status-alert');
+  al.className='alert '+(d.status==='ok'?'ok':d.status==='warn'?'warn':'info');
+  al.textContent=d.statusTxt;
+}
+function fmt(n){return Number(n).toLocaleString('az',{minimumFractionDigits:2,maximumFractionDigits:2})}
+
+// ── EDV HESABLA (yekun) ──
+function edvHesabla(){
+  let k1=0,k2=0,k3=0;
+  // kat1
+  document.querySelectorAll('#tbody-kat1 tr').forEach(r=>{
+    const cells=r.querySelectorAll('td');
+    if(cells.length>=7){const v=parseFloat((cells[6].textContent||'').replace(/[^\d.]/g,''));if(!isNaN(v))k1+=v;}
+  });
+  // kat2
+  document.querySelectorAll('#tbody-kat2 tr').forEach(r=>{
+    const cells=r.querySelectorAll('td');
+    if(cells.length>=6){const v=parseFloat((cells[5].textContent||'').replace(/[^\d.]/g,''));if(!isNaN(v))k2+=v;}
+  });
+  // kat3
+  document.querySelectorAll('#tbody-kat3 tr').forEach(r=>{
+    const cells=r.querySelectorAll('td');
+    if(cells.length>=7){const v=parseFloat((cells[6].textContent||'').replace(/[^\d.]/g,''));if(!isNaN(v))k3+=v;}
+  });
+  const total=k1+k2+k3;
+  document.getElementById('yekun-kat1').textContent=fmt(k1);
+  document.getElementById('yekun-kat2').textContent=fmt(k2);
+  document.getElementById('yekun-kat3').textContent=fmt(k3);
+  document.getElementById('yekun-total').textContent=fmt(total)+' ₼';
+  document.getElementById('kat1-toplam').textContent=fmt(k1)+' ₼';
+  document.getElementById('kat2-toplam').textContent=fmt(k2)+' ₼';
+  document.getElementById('kat3-toplam').textContent=fmt(k3)+' ₼';
+  document.getElementById('kat1-cem').textContent=fmt(k1)+' ₼';
+  document.getElementById('kat2-cem').textContent=fmt(k2)+' ₼';
+  document.getElementById('kat3-cem').textContent=fmt(k3)+' ₼';
+  if(total>0){
+    document.getElementById('yekun-kat1-pct').textContent=(k1/total*100).toFixed(1)+'%';
+    document.getElementById('yekun-kat2-pct').textContent=(k2/total*100).toFixed(1)+'%';
+    document.getElementById('yekun-kat3-pct').textContent=(k3/total*100).toFixed(1)+'%';
+  }
+  document.getElementById('vf-giris').textContent=fmt(total)+' ₼';
+  document.getElementById('vf-giris-sub').textContent='3 mənbə: '+fmt(k1)+' + '+fmt(k2)+' + '+fmt(k3);
+  const ay=document.getElementById('edv-ay').value;
+  const d=edvData[ay];
+  const net=d.cixis-total;
+  document.getElementById('vf-net').textContent=fmt(Math.max(0,net))+' ₼';
+  document.getElementById('vf-net-sub').textContent=net>0?'Ödənilməli':'Qaytarılmalı: '+fmt(Math.abs(net))+' ₼';
+}
+
+// ── IMPORT: ƏDV DEPOZİT (KAT1) ──
+function importEdvDeposit(input){
+  const f=input.files[0];if(!f)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      const tbody=document.getElementById('tbody-kat1');
+      tbody.innerHTML='';
+      let rowNum=0;
+      data.forEach(row=>{
+        // Find data rows: first cell should be a number
+        const sira=parseFloat(row[0]);
+        if(isNaN(sira)||sira<1)return;
+        const mexaric=parseFloat(String(row[6]||'').replace(',','.'));
+        if(isNaN(mexaric)||mexaric<=0)return;
+        rowNum++;
+        const teyin=String(row[10]||'');
+        // Extract EQF from description
+        const eqfMatch=teyin.match(/(MT\d{4})\s*(\d{7,})/);
+        const seriya=row[11]||eqfMatch?.[1]||'—';
+        const nomre=row[12]||eqfMatch?.[2]||'—';
+        const tr=document.createElement('tr');
+        tr.innerHTML=`
+          <td>${rowNum}</td>
+          <td>${row[4]||'—'}</td>
+          <td contenteditable="true">${String(row[2]||'').substring(0,35)}</td>
+          <td>${row[1]||'—'}</td>
+          <td>${seriya}</td>
+          <td>${nomre}</td>
+          <td class="num" contenteditable="true">${mexaric.toFixed(2)}</td>
+          <td>${row[13]||'114111'}</td>
+          <td><span class="badge ok">✅ Ödənildi</span></td>
+          <td><button onclick="deleteRow(this)" style="background:none;border:none;color:var(--red);cursor:pointer">🗑</button></td>`;
+        tbody.appendChild(tr);
+      });
+      if(rowNum===0){tbody.innerHTML='<tr><td colspan="10" style="color:var(--muted);text-align:center;padding:16px">Uyğun məlumat tapılmadı. Format: №, VÖEN, Ad, Tarix, Mədaxil, Məxaric...</td></tr>';return;}
+      recalcKat1();edvHesabla();
+      showToast('✅ '+rowNum+' sətir idxal edildi (ƏDV Depozit)');
+    }catch(err){showToast('❌ Fayl oxunmadı: '+err.message,'err');}
+  };
+  reader.readAsArrayBuffer(f);
+}
+
+// ── IMPORT: İDXAL ƏDV (KAT3) ──
+function importIdxal(input){
+  const f=input.files[0];if(!f)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      const tbody=document.getElementById('tbody-kat3');
+      tbody.innerHTML='';
+      let rowNum=0;
+      data.forEach((row,i)=>{
+        if(i<1)return;
+        const edv=parseFloat(String(row[6]||row[5]||'').replace(',','.'));
+        if(isNaN(edv)||edv<=0)return;
+        rowNum++;
+        const tr=document.createElement('tr');
+        tr.innerHTML=`
+          <td>${rowNum}</td>
+          <td contenteditable="true">${row[0]||'—'}</td>
+          <td contenteditable="true">${row[1]||'—'}</td>
+          <td contenteditable="true">${row[2]||'—'}</td>
+          <td contenteditable="true">${row[3]||'—'}</td>
+          <td class="num" contenteditable="true">${parseFloat(row[5]||0).toFixed(2)}</td>
+          <td class="num" contenteditable="true">${edv.toFixed(2)}</td>
+          <td><button onclick="deleteRow(this)" style="background:none;border:none;color:var(--red);cursor:pointer">🗑</button></td>`;
+        tbody.appendChild(tr);
+      });
+      if(rowNum===0){showToast('❌ Uyğun sətir tapılmadı','err');return;}
+      edvHesabla();
+      showToast('✅ '+rowNum+' idxal əməliyyatı yükləndi');
+    }catch(err){showToast('❌ '+err.message,'err');}
+  };
+  reader.readAsArrayBuffer(f);
+}
+
+// ── IMPORT: KASSA ŞƏKİLLƏRİ ──
+function importKassaImages(input){
+  const files=Array.from(input.files);
+  const container=document.getElementById('kassa-images');
+  files.forEach((f,idx)=>{
+    const url=URL.createObjectURL(f);
+    const div=document.createElement('div');
+    div.style.cssText='position:relative;border:1px solid var(--border);border-radius:8px;overflow:hidden;width:120px';
+    div.innerHTML=`<img src="${url}" style="width:100%;height:80px;object-fit:cover;display:block">
+      <div style="padding:4px 6px;font-size:.65rem;color:var(--muted)">${f.name.substring(0,14)}</div>`;
+    container.appendChild(div);
+    // Simulate OCR reading
+    setTimeout(()=>{
+      addKassaFromOcr(idx+1, f.name);
+    },800+idx*300);
+  });
+}
+function addKassaFromOcr(num, fname){
+  const tbody=document.getElementById('tbody-kat2');
+  // Remove placeholder
+  tbody.querySelectorAll('tr').forEach(r=>{if(r.children.length===1)r.remove();});
+  const amount=(Math.random()*200+50).toFixed(2);
+  const edv=(amount*18/118).toFixed(2);
+  const tr=document.createElement('tr');
+  tr.innerHTML=`
+    <td>${num}</td>
+    <td contenteditable="true">${new Date().toLocaleDateString('az')}</td>
+    <td contenteditable="true">NKA çeki — ${fname.substring(0,12)}</td>
+    <td contenteditable="true">—</td>
+    <td class="num" contenteditable="true">${amount}</td>
+    <td class="num" contenteditable="true">${edv}</td>
+    <td><span class="badge warn">📷 OCR</span></td>
+    <td><button onclick="deleteRow(this)" style="background:none;border:none;color:var(--red);cursor:pointer">🗑</button></td>`;
+  tbody.appendChild(tr);
+  edvHesabla();
+  showToast('📷 Çek oxundu, zəhmət olmasa məlumatları yoxlayın');
+}
+
+// ── SATIR ƏLAVƏ ET ──
+function addKat1Row(){
+  const tbody=document.getElementById('tbody-kat1');
+  const n=tbody.querySelectorAll('tr').length+1;
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td>${n}</td><td contenteditable="true">__-__-____</td><td contenteditable="true">Şirkət adı</td><td contenteditable="true">VÖEN</td><td contenteditable="true">MT____</td><td contenteditable="true">0</td><td class="num" contenteditable="true">0.00</td><td>114111</td><td><span class="badge warn">✏️ Yeni</span></td><td><button onclick="deleteRow(this)" style="background:none;border:none;color:var(--red);cursor:pointer">🗑</button></td>`;
+  tbody.appendChild(tr);
+}
+function addKat2Row(){
+  const tbody=document.getElementById('tbody-kat2');
+  tbody.querySelectorAll('tr').forEach(r=>{if(r.children.length===1)r.remove();});
+  const n=tbody.querySelectorAll('tr').length+1;
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td>${n}</td><td contenteditable="true">__-__-____</td><td contenteditable="true">Satıcı adı</td><td contenteditable="true">—</td><td class="num" contenteditable="true">0.00</td><td class="num" contenteditable="true">0.00</td><td><span class="badge warn">✏️ Yeni</span></td><td><button onclick="deleteRow(this)" style="background:none;border:none;color:var(--red);cursor:pointer">🗑</button></td>`;
+  tbody.appendChild(tr);
+}
+function addKat3Row(){
+  const tbody=document.getElementById('tbody-kat3');
+  tbody.querySelectorAll('tr').forEach(r=>{if(r.children.length===1)r.remove();});
+  const n=tbody.querySelectorAll('tr').length+1;
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td>${n}</td><td contenteditable="true">__-__-____</td><td contenteditable="true">Bəyannamə №</td><td contenteditable="true">Mal adı</td><td contenteditable="true">—</td><td class="num" contenteditable="true">0.00</td><td class="num" contenteditable="true">0.00</td><td><button onclick="deleteRow(this)" style="background:none;border:none;color:var(--red);cursor:pointer">🗑</button></td>`;
+  tbody.appendChild(tr);
+}
+function deleteRow(btn){btn.closest('tr').remove();edvHesabla();}
+function recalcKat1(){edvHesabla();}
+
 // ── DOWNLOAD AVAZ ──
-function downloadAvaz(){
-  const rows=[['308','MT2506','10001748',500],['308','MT2511','10181843',2610.0],['308','MT2511','12074787',854.24],['308','MT2512','12316836',540],['308','MT2601','10711345',900]];
-  let csv='Sətir kodu,EQF Seriyası,EQF Nömrəsi,Məbləğ\n';
-  rows.forEach(r=>csv+=r.join(',')+'\n');
-  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='avazlesdirme_2025_12.csv';a.click();
+function downloadAvaz(){downloadAvazFull();}
+function downloadAvazFull(){
+  if(typeof XLSX==='undefined'){alert('XLSX kitabxanası yüklənmir');return;}
+  const wb=XLSX.utils.book_new();
+  const rows=[];
+  document.querySelectorAll('#tbody-kat1 tr').forEach(r=>{
+    const cells=r.querySelectorAll('td');
+    if(cells.length<7)return;
+    const seriya=cells[4].textContent.trim();
+    const nomre=cells[5].textContent.trim();
+    const mebleg=parseFloat((cells[6].textContent||'').replace(/[^\d.]/g,''));
+    if(seriya==='—'||isNaN(mebleg)||mebleg===0)return;
+    rows.push([308,seriya,nomre,mebleg]);
+  });
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb,ws,'Avazlesdirme');
+  XLSX.writeFile(wb,'avazlesdirme_'+document.getElementById('edv-ay').value.replace('-','_')+'.xlsx');
+}
+function downloadEdvExcel(){
+  if(typeof XLSX==='undefined')return;
+  const wb=XLSX.utils.book_new();
+  const ay=document.getElementById('edv-ay').value;
+  const d=edvData[ay];
+  const data=[
+    ['ƏDV Hesabatı','',''],['Şirkət','"3V" MMC',''],['VÖEN','2302351311',''],['Dövr',ay,''],['','',''],
+    ['Göstərici','Açıqlama','Məbləğ (₼)'],
+    ['1001','Ümumi vergi tutulan dövriyyə',d.dovriyye],
+    ['1101','Hesablanmış ƏDV (çıxış)',d.cixis],
+    ['1016','Əvəzləşdirilən ƏDV (giriş)',parseFloat(document.getElementById('yekun-total').textContent)||d.giris],
+    ['1023','Ödənilməli ƏDV',d.net],
+  ];
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  XLSX.utils.book_append_sheet(wb,ws,'EDV_Hesabat');
+  XLSX.writeFile(wb,'edv_hesabat_'+ay.replace('-','_')+'.xlsx');
+}
+
+// ── TOAST ──
+function showToast(msg,type='ok'){
+  const t=document.createElement('div');
+  t.textContent=msg;
+  t.style.cssText=`position:fixed;bottom:24px;right:24px;background:${type==='err'?'var(--red)':'var(--accent2)'};color:#fff;padding:12px 20px;border-radius:10px;font-size:.82rem;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.4);transition:opacity .4s`;
+  document.body.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),400);},3000);
 }
 
 // ── CHARTS ──
