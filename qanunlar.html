@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azərbaycan Vergi Qanunları — ƏDV Referans</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --card: #1a1d2e;
+    --card2: #222538;
+    --accent: #6c63ff;
+    --accent2: #00d4aa;
+    --red: #ff4d6d;
+    --yellow: #ffd166;
+    --text: #e0e0f0;
+    --muted: #8888aa;
+    --border: #2e3155;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 260px;
+    background: var(--card);
+    border-right: 1px solid var(--border);
+    padding: 20px 0;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    overflow-y: auto;
+    z-index: 100;
+  }
+  .sidebar-logo {
+    padding: 0 20px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .sidebar-logo h2 { font-size: 1rem; font-weight: 700; }
+  .sidebar-logo p { font-size: 0.7rem; color: var(--muted); margin-top: 4px; }
+  .sidebar a {
+    display: block;
+    padding: 8px 20px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.8rem;
+    border-left: 3px solid transparent;
+    transition: all 0.15s;
+  }
+  .sidebar a:hover, .sidebar a.active {
+    color: var(--text);
+    background: rgba(108,99,255,0.08);
+    border-left-color: var(--accent);
+  }
+  .sidebar .cat {
+    padding: 16px 20px 6px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+  }
+
+  /* ── Content ── */
+  .content {
+    margin-left: 260px;
+    flex: 1;
+    padding: 40px;
+    max-width: 900px;
+  }
+
+  /* ── Section ── */
+  .section {
+    margin-bottom: 60px;
+    scroll-margin-top: 20px;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-icon { font-size: 1.6rem; }
+  .section-header h2 { font-size: 1.3rem; font-weight: 700; }
+  .section-header p { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+  .madde {
+    font-size: 0.7rem;
+    background: rgba(108,99,255,0.15);
+    color: var(--accent);
+    padding: 2px 10px;
+    border-radius: 20px;
+    margin-left: auto;
+    white-space: nowrap;
+  }
+
+  /* ── Card ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card h3 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: var(--accent2);
+  }
+  .card p, .card li {
+    font-size: 0.82rem;
+    line-height: 1.7;
+    color: var(--text);
+  }
+  .card ul { padding-left: 16px; margin-top: 6px; }
+  .card li { margin-bottom: 4px; }
+
+  /* ── Table ── */
+  .tbl-wrap { overflow-x: auto; margin-top: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  th {
+    background: var(--card2);
+    color: var(--muted);
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  td { padding: 10px 14px; border-bottom: 1px solid rgba(46,49,85,0.5); vertical-align: top; line-height: 1.6; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(108,99,255,0.05); }
+
+  /* ── Alert boxes ── */
+  .alert {
+    padding: 14px 16px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    margin-bottom: 14px;
+    line-height: 1.6;
+    border-left: 4px solid;
+  }
+  .alert.info { background: rgba(108,99,255,0.1); border-color: var(--accent); }
+  .alert.ok   { background: rgba(0,212,170,0.1);  border-color: var(--accent2); }
+  .alert.warn { background: rgba(255,209,102,0.1); border-color: var(--yellow); }
+  .alert.err  { background: rgba(255,77,109,0.1);  border-color: var(--red); }
+
+  /* ── Steps ── */
+  .steps { counter-reset: step; }
+  .step {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 14px;
+    align-items: flex-start;
+  }
+  .step-num {
+    counter-increment: step;
+    min-width: 28px; height: 28px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .step-num::before { content: counter(step); }
+  .step-body { font-size: 0.82rem; line-height: 1.7; padding-top: 4px; }
+  .step-body strong { color: var(--accent2); }
+
+  /* ── Tag ── */
+  .tag {
+    display: inline-block; padding: 2px 8px;
+    border-radius: 20px; font-size: 0.68rem; font-weight: 600;
+  }
+  .tag.green { background: rgba(0,212,170,0.15); color: var(--accent2); }
+  .tag.red   { background: rgba(255,77,109,0.15); color: var(--red); }
+  .tag.blue  { background: rgba(108,99,255,0.15); color: var(--accent); }
+  .tag.yellow{ background: rgba(255,209,102,0.15);color: var(--yellow); }
+
+  /* ── Footer ── */
+  footer {
+    margin-top: 60px;
+    padding: 20px 0;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.72rem;
+  }
+
+  /* ── Search ── */
+  .search-wrap { padding: 0 20px 16px; }
+  #search {
+    width: 100%;
+    background: var(--card2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+  }
+  #search:focus { outline: none; border-color: var(--accent); }
+
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .content { margin-left: 0; padding: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Sidebar ── -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <h2>⚖️ Vergi Qanunları</h2>
+    <p>Azərbaycan Respublikası · 2025</p>
+  </div>
+  <div class="search-wrap">
+    <input type="text" id="search" placeholder="🔍 Axtar..." oninput="filterNav(this.value)">
+  </div>
+
+  <div class="cat">ƏDV — Əsaslar</div>
+  <a href="#edv-esas">ƏDV Nədir?</a>
+  <a href="#qeydiyyat">Qeydiyyat Şərtləri</a>
+  <a href="#dereceler">Dərəcələr</a>
+  <a href="#azad">ƏDV-dən Azad</a>
+
+  <div class="cat">Hesablamalar</div>
+  <a href="#hesablama">Hesablama Qaydası</a>
+  <a href="#avazlesdirme">Əvəzləşdirmə</a>
+  <a href="#depozit">Depozit Hesab</a>
+
+  <div class="cat">Bəyannamə</div>
+  <a href="#beyanname">Bəyannamə Təqvimi</a>
+  <a href="#xml">XML Strukturu</a>
+
+  <div class="cat">Qaimə-Faktura</div>
+  <a href="#eqf">Elektron Qaimə</a>
+  <a href="#eqf-novleri">Qaimə Növləri</a>
+
+  <div class="cat">Digər Vergilər</div>
+  <a href="#gelir">Gəlir Vergisi</a>
+  <a href="#ssn">SSN / DSMF</a>
+  <a href="#icbari">İcbari Tibbi Sığorta</a>
+  <a href="#yol">Yol Vergisi</a>
+
+  <div class="cat">Sanksiyalar</div>
+  <a href="#ceza">Cəzalar & Faizlər</a>
+
+  <div class="cat">Faydalı Linklər</div>
+  <a href="#linklər">Rəsmi Saytlar</a>
+</nav>
+
+<!-- ── Content ── -->
+<main class="content">
+
+  <div style="margin-bottom:32px">
+    <h1 style="font-size:1.8rem;font-weight:800">Azərbaycan Vergi Qanunları</h1>
+    <p style="color:var(--muted);margin-top:6px;font-size:0.85rem">
+      Vergi Məcəlləsi əsasında hazırlanmış referans sənəd · taxes.gov.az · Son yeniləmə: 28.02.2026
+    </p>
+  </div>
+
+  <!-- ═══ ƏDV ƏSASLAR ═══ -->
+  <section class="section" id="edv-esas">
+    <div class="section-header">
+      <div class="section-icon">📘</div>
+      <div>
+        <h2>ƏDV — Əlavə Dəyər Vergisi Nədir?</h2>
+        <p>Əsas anlayışlar və prinsiplər</p>
+      </div>
+      <span class="madde">VM Maddə 153-178</span>
+    </div>
+
+    <div class="card">
+      <h3>Tərif</h3>
+      <p>ƏDV — malların istehsalı, işlərin görülməsi və xidmətlərin göstərilməsi prosesinin bütün mərhələlərini əhatə edən, hər mərhələdə yaradılan əlavə dəyərdən tutulan dolaylı vergidir.</p>
+    </div>
+
+    <div class="card">
+      <h3>Əsas Prinsip</h3>
+      <div class="alert ok">
+        Satışdan hesablanan ƏDV (çıxış) − Alışda ödənilən ƏDV (giriş) = Büdcəyə ödəniləcək ƏDV
+      </div>
+      <p>Hər ƏDV ödəyicisi yalnız öz əlavə etdiyi dəyərə görə vergi ödəyir. Bu dolaylı vergidir — son yükü istehlakçı daşıyır.</p>
+    </div>
+
+    <div class="card">
+      <h3>ƏDV Ödəyicisi Kimdir?</h3>
+      <p>ƏDV-nin məqsədləri üçün qeydiyyatdan keçən və ya qeydiyyatdan keçməli olan şəxs ƏDV ödəyicisidir. Bura aşağıdakılar daxildir:</p>
+      <ul>
+        <li>Azərbaycan ərazisində vergi tutulan əməliyyatlar həyata keçirən hüquqi şəxslər</li>
+        <li>Fərdi sahibkarlar (VÖEN-ə sahib)</li>
+        <li>Xarici ölkənin rezidentləri (müəyyən hallarda)</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ═══ QEYDİYYAT ═══ -->
+  <section class="section" id="qeydiyyat">
+    <div class="section-header">
+      <div class="section-icon">📝</div>
+      <div>
+        <h2>ƏDV Qeydiyyatı</h2>
+        <p>Məcburi və könüllü qeydiyyat şərtləri</p>
+      </div>
+      <span class="madde">VM Maddə 155</span>
+    </div>
+
+    <div class="card">
+      <h3>Məcburi Qeydiyyat — 4 Hal</h3>
+      <div class="steps">
+        <div class="step"><div class="step-num"></div><div class="step-body"><strong>200,000 ₼ hədd:</strong> Ardıcıl 12 aylıq dövrün istənilən ayında və ya bir müqavilə üzrə ümumi dəyər 200,000 ₼-dən çox olduqda</div></div>
+        <div class="step"><div class="step-num"></div><div class="step-body"><strong>Bina tikintisi:</strong> Bina tikintisi fəaliyyəti ilə məşğul olan istənilən şəxs (həcmdən asılı olmayaraq)</div></div>
+        <div class="step"><div class="step-num"></div><div class="step-body"><strong>Birgə fəaliyyət:</strong> Birgə sahibkarlıq fəaliyyətinin tərəflərindən biri ƏDV ödəyicisi olduqda, həmin fəaliyyətin uçotunu aparan şəxs</div></div>
+        <div class="step"><div class="step-num"></div><div class="step-body"><strong>Aksizli mallar:</strong> Aksizli və məcburi nişanlama ilə nişanlanmalı malların istehsalçısı</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Könüllü Qeydiyyat</h3>
+      <p>200,000 ₼ həddinə çatmadan da könüllü olaraq ƏDV qeydiyyatına alına bilərsiniz. Bunun üçün uçotda olduğunuz vergi orqanına <em>"Vergi ödəyicisinin ƏDV-nin məqsədləri üçün qeydiyyata alınması haqqında Ərizə"</em> ilə müraciət edin.</p>
+      <div class="alert warn" style="margin-top:12px">
+        ⚠️ Könüllü qeydiyyat faydalıdır: Alışlarda ödədiyin ƏDV-ni əvəzləşdirə bilirsən. Lakin hesabat öhdəlikləri də yaranır.
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Qeydiyyat Ləğvi</h3>
+      <p>Son 12 ay ərzində vergi tutulan dövriyyə 200,000 ₼-dən az olduqda qeydiyyatdan çıxmaq üçün müraciət edilə bilər. Vergi orqanı 1 ay ərzində nəzərdən keçirir.</p>
+    </div>
+  </section>
+
+  <!-- ═══ DƏRƏCƏLƏR ═══ -->
+  <section class="section" id="dereceler">
+    <div class="section-header">
+      <div class="section-icon">📊</div>
+      <div>
+        <h2>ƏDV Dərəcələri</h2>
+        <p>Standart, sıfır və güzəştli dərəcələr</p>
+      </div>
+      <span class="madde">VM Maddə 163, 165</span>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>Dərəcə</th><th>Tətbiq Sahəsi</th><th>Qeyd</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="tag red">18%</span></td>
+            <td>Standart dərəcə — əksər mallar, işlər, xidmətlər</td>
+            <td>ƏDV-yə cəlb olunan bütün əməliyyatlara tətbiq edilir</td>
+          </tr>
+          <tr>
+            <td><span class="tag blue">0%</span></td>
+            <td>
+              Malların ixracı;<br>
+              Beynəlxalq/tranzit yük və sərnişin daşınması;<br>
+              Beynəlxalq uçuşlarla bağlı xidmətlər;<br>
+              Qrant hesabına idxal;<br>
+              Diplomatik nümayəndəliklərin alışları;<br>
+              Pərakəndə ixrac (duty-free)
+            </td>
+            <td>Sıfır dərəcə — vergi hesablanır amma 0%; giriş ƏDV-si əvəzləşdirilir</td>
+          </tr>
+          <tr>
+            <td><span class="tag green">Azad</span></td>
+            <td>
+              Tibbi xidmətlər və dərmanlar;<br>
+              Təhsil xidmətləri;<br>
+              Maliyyə və bank xidmətləri;<br>
+              Sığorta xidmətləri;<br>
+              Torpaq (bəzi hallarda);<br>
+              Kommunal xidmətlər (əhali üçün);<br>
+              Qiymətli kağızlar;<br>
+              Lotereya
+            </td>
+            <td>ƏDV-dən tamamilə azad — giriş ƏDV-si əvəzləşdirilmir</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="alert warn" style="margin-top:16px">
+      ⚠️ <strong>Sıfır dərəcə vs Azad:</strong> Əsas fərq — sıfır dərəcədə giriş ƏDV-si əvəzləşdirilir, azad halda isə əvəzləşdirilmir. İxracatçılar üçün sıfır dərəcə daha sərfəlidir.
+    </div>
+  </section>
+
+  <!-- ═══ ƏDV-DƏN AZAD ═══ -->
+  <section class="section" id="azad">
+    <div class="section-header">
+      <div class="section-icon">🛡️</div>
+      <div>
+        <h2>ƏDV-dən Azad Əməliyyatlar</h2>
+        <p>VM Maddə 164 üzrə tam siyahı</p>
+      </div>
+      <span class="madde">VM Maddə 164</span>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Sahə</th><th>Şərtlər</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>Tibbi xidmətlər</td><td>Lisenziyalı tibb müəssisəsi</td></tr>
+          <tr><td>2</td><td>Dərman preparatları</td><td>Siyahıya salınmış dərmanlar</td></tr>
+          <tr><td>3</td><td>Təhsil xidmətləri</td><td>Dövlət standartına uyğun</td></tr>
+          <tr><td>4</td><td>Sığorta və təkrar sığorta</td><td>Sığorta haqqı (premium)</td></tr>
+          <tr><td>5</td><td>Bank və maliyyə xidmətləri</td><td>Faizlər, komissiyalar</td></tr>
+          <tr><td>6</td><td>Qiymətli kağızlar</td><td>Alqı-satqı, emissiya</td></tr>
+          <tr><td>7</td><td>Kommunal xidmətlər</td><td>Əhaliyə göstərilən su, istilik</td></tr>
+          <tr><td>8</td><td>İctimai nəqliyyat</td><td>Şəhər daxili nəqliyyat</td></tr>
+          <tr><td>9</td><td>Torpaq</td><td>Torpaq sahəsinin satışı</td></tr>
+          <tr><td>10</td><td>Dini xidmətlər</td><td>Dini mərasim xidmətləri</td></tr>
+          <tr><td>11</td><td>Sosial xidmətlər</td><td>Körpəuşaq evi, qocalıq evi</td></tr>
+          <tr><td>12</td><td>Poçt xidmətləri</td><td>Dövlət poçtu markaları</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ═══ HESABLAMA ═══ -->
+  <section class="section" id="hesablama">
+    <div class="section-header">
+      <div class="section-icon">🔢</div>
+      <div>
+        <h2>ƏDV Hesablama Qaydası</h2>
+        <p>Düsturlar və praktiki nümunələr</p>
+      </div>
+      <span class="madde">VM Maddə 166-170</span>
+    </div>
+
+    <div class="card">
+      <h3>Əsas Düsturlar</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Hesablama</th><th>Düstur</th><th>Nümunə</th></tr></thead>
+          <tbody>
+            <tr><td>ƏDV məbləği (kənardan)</td><td>Məbləğ × 18%</td><td>1000 × 0.18 = 180 ₼</td></tr>
+            <tr><td>ƏDV məbləği (daxildən)</td><td>Cəmi × 18/118</td><td>1180 × 18/118 = 180 ₼</td></tr>
+            <tr><td>ƏDV-siz məbləğ</td><td>Cəmi ÷ 1.18</td><td>1180 ÷ 1.18 = 1000 ₼</td></tr>
+            <tr><td>Ödəniləcək ƏDV</td><td>Çıxış ƏDV − Giriş ƏDV</td><td>29425 − 15858 = 13567 ₼</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Kənd Təsərrüfatı Məhsulları (Xüsusi hal)</h3>
+      <p>Azərbaycanda istehsal olunan kənd təsərrüfatı məhsullarının pərakəndə satışında ƏDV <strong>ticarət əlavəsindən</strong> hesablanır (ümumi satış qiymətindən deyil).</p>
+      <div class="alert info" style="margin-top:10px">
+        Nümunə: Alış 100 ₼, satış 130 ₼ → ƏDV = (130−100) × 18% = 5.4 ₼
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ ƏVƏZLƏŞDİRMƏ ═══ -->
+  <section class="section" id="avazlesdirme">
+    <div class="section-header">
+      <div class="section-icon">🔄</div>
+      <div>
+        <h2>ƏDV Əvəzləşdirməsi</h2>
+        <p>Şərtlər, qaydalar, istisnaları</p>
+      </div>
+      <span class="madde">VM Maddə 175</span>
+    </div>
+
+    <div class="card">
+      <h3>Əvəzləşdirmə üçün 4 Şərt (hamısı olmalıdır)</h3>
+      <div class="steps">
+        <div class="step"><div class="step-num"></div><div class="step-body"><strong>Elektron qaimə-faktura:</strong> Malları/xidmətləri təqdim edən şəxsdən elektron qaimə-faktura alınmış olmalıdır (kağız qaimə qəbul edilmir)</div></div>
+        <div class="step"><div class="step-num"></div><div class="step-body"><strong>Sahibkarlıq məqsədi:</strong> Alış sahibkarlıq fəaliyyəti üçün və ƏDV tutulan əməliyyatların məqsədləri üçün olmalıdır (şəxsi alışlar əvəzləşdirilmir)</div></div>
+        <div class="step"><div class="step-num"></div><div class="step-body"><strong>Bank köçürməsi:</strong> Əməliyyatın dəyəri bank hesabından həmin malları təqdim edən şəxsin bank hesabına köçürülməlidir</div></div>
+        <div class="step"><div class="step-num"></div><div class="step-body"><strong>ƏDV depozit hesabı:</strong> ƏDV məbləği ayrıca ƏDV-nin depozit hesabına ödənilməlidir (cari hesabdan deyil)</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Əvəzləşdirilə Bilməyən Hallar</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Hal</th><th>Səbəb</th></tr></thead>
+          <tbody>
+            <tr><td>Şəxsi istifadə üçün alışlar</td><td>Sahibkarlıq məqsədi yoxdur</td></tr>
+            <tr><td>Kağız qaimə ilə alışlar</td><td>Elektron qaimə şərti pozulur</td></tr>
+            <tr><td>ƏDV-dən azad fəaliyyət üçün</td><td>Korrektiv əvəzləşdirmə tətbiq edilir</td></tr>
+            <tr><td>Qeydiyyatsız satıcıdan alış</td><td>Satıcı ƏDV ödəyicisi deyil</td></tr>
+            <tr><td>Nağd ödəniş (bank köçürməsi olmadan)</td><td>3-cü şərt pozulur</td></tr>
+            <tr><td>ƏDV depozit hesabına ödənilməmiş</td><td>4-cü şərt pozulur</td></tr>
+            <tr><td>Sığorta xidmətlərinin ƏDV-si</td><td>ƏDV-dən azad əməliyyat</td></tr>
+            <tr><td>İdarəetmə xərclərinin müəyyən hissəsi</td><td>Proporsional əvəzləşdirmə qaydası</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Proporsional (Qarışıq) Əvəzləşdirmə</h3>
+      <p>Həm ƏDV-yə cəlb olunan, həm də azad əməliyyatlar aparılırsa, giriş ƏDV-si proporsional əvəzləşdirilir:</p>
+      <div class="alert info" style="margin-top:10px">
+        Əvəzləşdirmə = Giriş ƏDV × (Vergiyə cəlb olunan dövriyyə ÷ Ümumi dövriyyə)
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ DEPOZİT HESAB ═══ -->
+  <section class="section" id="depozit">
+    <div class="section-header">
+      <div class="section-icon">🏦</div>
+      <div>
+        <h2>ƏDV Depozit Hesabı</h2>
+        <p>Sub-uçot hesabının işləmə qaydası</p>
+      </div>
+      <span class="madde">VM Maddə 175.6</span>
+    </div>
+
+    <div class="card">
+      <h3>Nədir?</h3>
+      <p>ƏDV-nin depozit hesabı — hər ƏDV ödəyicisinin bank tərəfindən açılan xüsusi ayrıca hesabıdır. Alışlarda ödənilən ƏDV bu hesaba köçürülür, oradan da büdcəyə avtomatik ötürülür.</p>
+    </div>
+
+    <div class="card">
+      <h3>Necə İşləyir?</h3>
+      <div class="steps">
+        <div class="step"><div class="step-num"></div><div class="step-body">Alıcı mal/xidmət alır → Satıcı elektron qaimə-faktura göndərir</div></div>
+        <div class="step"><div class="step-num"></div><div class="step-body">Alıcı malın ƏDV-siz dəyərini satıcının <strong>cari hesabına</strong> köçürür</div></div>
+        <div class="step"><div class="step-num"></div><div class="step-body">ƏDV məbləğini isə satıcının <strong>ƏDV depozit hesabına</strong> köçürür</div></div>
+        <div class="step"><div class="step-num"></div><div class="step-body">Bu ödəniş əvəzləşdirməyə hüquq verir — bəyannamədə göstərici 1016-ya daxil edilir</div></div>
+        <div class="step"><div class="step-num"></div><div class="step-body">Satıcı öz depozit hesabından büdcəyə ƏDV ödəyir (büdcə kodu: 114111)</div></div>
+      </div>
+    </div>
+
+    <div class="alert ok">
+      ✅ Əvəzləşdirmənin bank tərəfindən avtomatik izlənilməsi dövlət üçün nəzarəti asanlaşdırır, şirkət üçün isə şəffaflıq yaradır.
+    </div>
+  </section>
+
+  <!-- ═══ BƏYANNAMƏ ═══ -->
+  <section class="section" id="beyanname">
+    <div class="section-header">
+      <div class="section-icon">📅</div>
+      <div>
+        <h2>Bəyannamə Təqvimi</h2>
+        <p>Təqdim müddətləri və ödəniş tarixləri</p>
+      </div>
+      <span class="madde">VM Maddə 176</span>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Hesabat Ayı</th><th>Son Tarix</th><th>Qeyd</th></tr></thead>
+        <tbody>
+          <tr><td>Yanvar</td><td>20 Fevral</td><td rowspan="12">Bəyannamə + ödəniş eyni gündə</td></tr>
+          <tr><td>Fevral</td><td>20 Mart</td></tr>
+          <tr><td>Mart</td><td>20 Aprel</td></tr>
+          <tr><td>Aprel</td><td>20 May</td></tr>
+          <tr><td>May</td><td>20 İyun</td></tr>
+          <tr><td>İyun</td><td>20 İyul</td></tr>
+          <tr><td>İyul</td><td>20 Avqust</td></tr>
+          <tr><td>Avqust</td><td>20 Sentyabr</td></tr>
+          <tr><td>Sentyabr</td><td>20 Oktyabr</td></tr>
+          <tr><td>Oktyabr</td><td>20 Noyabr</td></tr>
+          <tr><td>Noyabr</td><td>20 Dekabr</td></tr>
+          <tr><td>Dekabr</td><td>20 Yanvar (növbəti il)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="alert warn" style="margin-top:16px">
+      ⚠️ Son tarix bayram gününə düşərsə, növbəti iş günü son tarix hesab olunur.
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h3>Bəyannamənin Əsas Göstəriciləri</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Kod</th><th>Adı</th><th>Məzmun</th></tr></thead>
+          <tbody>
+            <tr><td>1001</td><td>Ümumi dövriyyə</td><td>Bütün vergi tutulan əməliyyatların cəmi</td></tr>
+            <tr><td>1005</td><td>18%-li dövriyyə</td><td>Standart dərəcəyə cəlb olunan</td></tr>
+            <tr><td>1006</td><td>0%-li dövriyyə</td><td>İxrac və digər sıfır dərəcəlilər</td></tr>
+            <tr><td>1007</td><td>Azad dövriyyə</td><td>ƏDV-dən azad əməliyyatlar</td></tr>
+            <tr><td>1101</td><td>Hesablanmış ƏDV</td><td>Satışdan (çıxış ƏDV)</td></tr>
+            <tr><td>1016</td><td>Əvəzləşdirmə</td><td>Alışdan (giriş ƏDV)</td></tr>
+            <tr><td>1023</td><td>Ödənilməli</td><td>1101 − 1016 (müsbət olduqda)</td></tr>
+            <tr><td>1092</td><td>Qaytarılmalı</td><td>1016 − 1101 (mənfi olduqda)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ XML STRUKTURU ═══ -->
+  <section class="section" id="xml">
+    <div class="section-header">
+      <div class="section-icon">🗂️</div>
+      <div>
+        <h2>ƏDV Bəyannaməsi XML Strukturu</h2>
+        <p>VAT_1 sxemi — e-taxes.gov.az</p>
+      </div>
+      <span class="madde">VAT_1.xsd</span>
+    </div>
+
+    <div class="card">
+      <h3>Əsas XML Tagları</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Tag</th><th>Məzmun</th></tr></thead>
+          <tbody>
+            <tr><td>&lt;beyanname&gt;</td><td>Kök element — bütün bəyannaməni əhatə edir</td></tr>
+            <tr><td>&lt;mukellef&gt;</td><td>Vergi ödəyicisi məlumatları</td></tr>
+            <tr><td>&lt;vergiNo&gt;</td><td>VÖEN nömrəsi</td></tr>
+            <tr><td>&lt;dovre&gt;</td><td>Hesabat dövrü (ay/il)</td></tr>
+            <tr><td>&lt;HesaplamaUzreEnt&gt;</td><td>Satış ƏDV hesablaması (1001-1101)</td></tr>
+            <tr><td>&lt;HesaplamaAvazEnt&gt;</td><td>Əvəzləşdirmə hissəsi (1016)</td></tr>
+            <tr><td>&lt;odenilmeli&gt;</td><td>Büdcəyə ödəniləcək məbləğ (1023)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="alert info" style="margin-top:12px">
+        kodVer="VAT_1" | lang="az" | Format: UTF-8 | e-taxes.gov.az-a yüklənir
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ ELEKTRONİK QAİMƏ ═══ -->
+  <section class="section" id="eqf">
+    <div class="section-header">
+      <div class="section-icon">🧾</div>
+      <div>
+        <h2>Elektron Qaimə-Faktura (EQF)</h2>
+        <p>Tələblər, müddətlər, qaydalar</p>
+      </div>
+      <span class="madde">VM Maddə 71-1</span>
+    </div>
+
+    <div class="card">
+      <h3>Nə Vaxt Verilməlidir?</h3>
+      <ul>
+        <li>Vergi ödəyicisi olan alıcıya — mütləq <strong>elektron qaimə-faktura</strong></li>
+        <li>Vergi ödəyicisi olmayan (fiziki şəxs) alıcıya — <strong>NKA çeki</strong> və/və ya mədaxil qəbzi</li>
+        <li>Müddət: əməliyyat baş verdiyi gündən <strong>5 iş günü</strong> ərzində</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>EQF-nin Məcburi Rekvizitləri</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Rekvizit</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Satıcının adı, VÖEN-i, ƏDV qeydiyyat nömrəsi</td></tr>
+            <tr><td>2</td><td>Alıcının adı, VÖEN-i</td></tr>
+            <tr><td>3</td><td>Qaimənin seriya nömrəsi (MT/MQ formatı)</td></tr>
+            <tr><td>4</td><td>Tarix</td></tr>
+            <tr><td>5</td><td>Malın/xidmətin adı, miqdarı, qiyməti</td></tr>
+            <tr><td>6</td><td>ƏDV-siz dəyər</td></tr>
+            <tr><td>7</td><td>ƏDV dərəcəsi və məbləği</td></tr>
+            <tr><td>8</td><td>ƏDV-li ümumi dəyər</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ QAİMƏ NÖVLƏRİ ═══ -->
+  <section class="section" id="eqf-novleri">
+    <div class="section-header">
+      <div class="section-icon">📂</div>
+      <div>
+        <h2>Elektron Qaimə Növləri</h2>
+        <p>e-taxes sistemindəki qaimə tipləri</p>
+      </div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Seriya</th><th>Növ</th><th>İstifadə</th></tr></thead>
+        <tbody>
+          <tr><td><span class="tag blue">MT</span></td><td>Malların, işlərin, xidmətlərin təqdim edilməsi</td><td>Ən çox istifadə olunan — satış qaiməsi</td></tr>
+          <tr><td><span class="tag red">MQ</span></td><td>Malların qaytarılması</td><td>İadə, geri qaytarma</td></tr>
+          <tr><td><span class="tag yellow">MD</span></td><td>Dəqiqləşdirmə (VM maddə 163)</td><td>Qaimənin düzəlişi</td></tr>
+          <tr><td><span class="tag green">MA</span></td><td>Alınmış avans ödənişləri</td><td>Avans qaiməsi</td></tr>
+          <tr><td><span class="tag blue">ME</span></td><td>Emal/saxlama üçün verilmə</td><td>Emala vermə</td></tr>
+          <tr><td><span class="tag blue">MX</span></td><td>Malların ixrac qeydi ilə satışı</td><td>İxrac</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ═══ GƏLİR VERGİSİ ═══ -->
+  <section class="section" id="gelir">
+    <div class="section-header">
+      <div class="section-icon">💼</div>
+      <div>
+        <h2>Gəlir Vergisi</h2>
+        <p>Hüquqi şəxslər və fiziki şəxslər</p>
+      </div>
+      <span class="madde">VM Maddə 96-106</span>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Kateqoriya</th><th>Dərəcə</th><th>Qeyd</th></tr></thead>
+        <tbody>
+          <tr><td>Hüquqi şəxslər (mənfəət)</td><td><span class="tag red">20%</span></td><td>Xalis mənfəətdən</td></tr>
+          <tr><td>Fiziki şəxs (aylıq 8000 ₼-ə qədər)</td><td><span class="tag green">14%</span></td><td>Əmək haqqından</td></tr>
+          <tr><td>Fiziki şəxs (8000 ₼-dən çox hissə)</td><td><span class="tag red">25%</span></td><td>Əmək haqqından</td></tr>
+          <tr><td>Sadələşdirilmiş vergi (kiçik sahibkarlar)</td><td><span class="tag blue">2%</span></td><td>Bakı — dövriyyədən; 4% müəyyən hallarda</td></tr>
+          <tr><td>Kənd yerlərindəki kiçik sahibkarlar</td><td><span class="tag blue">0%</span></td><td>3 il azad, sonra 2%</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ═══ SSN / DSMF ═══ -->
+  <section class="section" id="ssn">
+    <div class="section-header">
+      <div class="section-icon">🏛️</div>
+      <div>
+        <h2>Sosial Sığorta (DSMF)</h2>
+        <p>İşçi və işəgötürən hissəsi</p>
+      </div>
+      <span class="madde">Sosial Sığorta Qanunu</span>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Tərəf</th><th>Dərəcə</th><th>Hesablanma Bazası</th></tr></thead>
+        <tbody>
+          <tr><td>İşəgötürən</td><td><span class="tag red">22%</span></td><td>Hesablanmış əmək haqqından</td></tr>
+          <tr><td>İşçi</td><td><span class="tag yellow">3%</span></td><td>Hesablanmış əmək haqqından</td></tr>
+          <tr><td><strong>Cəmi</strong></td><td><strong>25%</strong></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="alert info" style="margin-top:12px">
+      Büdcə kodu: DSMF (Dövlət Sosial Müdafiə Fondu). Aylıq 20-nə qədər bəyannamə + ödəniş.
+    </div>
+  </section>
+
+  <!-- ═══ İCBARİ TİBBİ SİĞORTA ═══ -->
+  <section class="section" id="icbari">
+    <div class="section-header">
+      <div class="section-icon">🏥</div>
+      <div>
+        <h2>İcbari Tibbi Sığorta (İTS)</h2>
+        <p>İşəgötürən öhdəlikləri</p>
+      </div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Tərəf</th><th>Dərəcə</th><th>Qeyd</th></tr></thead>
+        <tbody>
+          <tr><td>İşəgötürən</td><td><span class="tag red">2%</span></td><td>Əmək haqqından</td></tr>
+          <tr><td>İşçi</td><td><span class="tag yellow">1%</span></td><td>Əmək haqqından tutulur</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="alert info" style="margin-top:12px">
+      2021-ci ildən bütün işçilər üçün məcburidir. Büdcə kodu: İTS DA (Tibbi Sığorta üzrə Dövlət Agentliyi).
+    </div>
+  </section>
+
+  <!-- ═══ YOL VERGİSİ ═══ -->
+  <section class="section" id="yol">
+    <div class="section-header">
+      <div class="section-icon">⛽</div>
+      <div>
+        <h2>Yol Vergisi</h2>
+        <p>Yanacaq satışında tətbiq olunan</p>
+      </div>
+      <span class="madde">VM Maddə 205-209</span>
+    </div>
+
+    <div class="card">
+      <p>Yol vergisi yanacaq satışında tətbiq olunur. EQF-də ayrıca sütun kimi göstərilir (sütun: "Yol vergisi"). 3V MMC-nin qaimələrindəki Lukoil fakturasında 9 ₼ yol vergisi görünür — bu yanacaq (likard) alışına aiddir.</p>
+    </div>
+  </section>
+
+  <!-- ═══ CƏZALAR ═══ -->
+  <section class="section" id="ceza">
+    <div class="section-header">
+      <div class="section-icon">⚠️</div>
+      <div>
+        <h2>Cəzalar və Faizlər</h2>
+        <p>İnzibati sanksiyalar cədvəli</p>
+      </div>
+      <span class="madde">VM Maddə 56-60</span>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Pozuntu</th><th>Cəza</th><th>Minimum</th></tr></thead>
+        <tbody>
+          <tr><td>ƏDV bəyannaməsini gecikmə ilə vermə</td><td>Ödəniləcək məbləğin 10%-i</td><td>40 ₼</td></tr>
+          <tr><td>Vergi ödənilməməsi/az ödənilmə</td><td>Borç məbləğinin 20%-i</td><td>40 ₼</td></tr>
+          <tr><td>Gecikmiş ödəniş faizi</td><td>Günlük 0.1% (aylıq ~3%)</td><td>—</td></tr>
+          <tr><td>ƏDV qeydiyyatı olmadan fəaliyyət</td><td>1,000 – 3,000 ₼</td><td>1,000 ₼</td></tr>
+          <tr><td>Saxta/uydurma qaimə-faktura</td><td>Məbləğin 50-100%-i + cinayət</td><td>—</td></tr>
+          <tr><td>Kassa aparatı olmadan fəaliyyət</td><td>2,000 – 4,000 ₼</td><td>2,000 ₼</td></tr>
+          <tr><td>Uçotun aparılmaması</td><td>500 – 5,000 ₼</td><td>500 ₼</td></tr>
+          <tr><td>Elektron qaimə vermə öhdəliyinin pozulması</td><td>50 – 500 ₼</td><td>50 ₼</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="alert err" style="margin-top:16px">
+      🚨 <strong>Vacib:</strong> Vergi orqanı tərəfindən yoxlama aparılmadan özünüzü düzəltsəniz — cəza 50% azaldılır. Yoxlamadan sonra düzəliş edilsə cəza tətbiq olunur.
+    </div>
+  </section>
+
+  <!-- ═══ LINKLƏR ═══ -->
+  <section class="section" id="linklər">
+    <div class="section-header">
+      <div class="section-icon">🔗</div>
+      <div>
+        <h2>Rəsmi Saytlar və Qaynaqlar</h2>
+        <p>Faydalı keçidlər</p>
+      </div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Sayt</th><th>Məqsəd</th><th>Link</th></tr></thead>
+        <tbody>
+          <tr><td>Dövlət Vergi Xidməti</td><td>Ümumi məlumat, bəyannamə qaydaları</td><td><a href="https://taxes.gov.az" target="_blank" style="color:var(--accent)">taxes.gov.az</a></td></tr>
+          <tr><td>İnternet Vergi İdarəsi</td><td>e-Bəyannamə, e-Qaimə, ƏDV depozit</td><td><a href="https://e-taxes.gov.az" target="_blank" style="color:var(--accent)">e-taxes.gov.az</a></td></tr>
+          <tr><td>DSMF</td><td>Sosial sığorta ödənişləri</td><td><a href="https://dsmf.gov.az" target="_blank" style="color:var(--accent)">dsmf.gov.az</a></td></tr>
+          <tr><td>İcbari Tibbi Sığorta DA</td><td>Tibbi sığorta ödənişləri</td><td><a href="https://its.gov.az" target="_blank" style="color:var(--accent)">its.gov.az</a></td></tr>
+          <tr><td>Vergi Məcəlləsi</td><td>Tam qanun mətni</td><td><a href="https://taxes.gov.az/az/page/vergi-mecellesi" target="_blank" style="color:var(--accent)">taxes.gov.az/vergi-mecellesi</a></td></tr>
+          <tr><td>ASAN Xidmət</td><td>Sənəd, arayış</td><td><a href="https://asan.gov.az" target="_blank" style="color:var(--accent)">asan.gov.az</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    <p>Azərbaycan Respublikasının Vergi Məcəlləsi əsasında hazırlanmışdır · taxes.gov.az rəsmi bələdçiləri · Son yeniləmə: 28.02.2026</p>
+    <p style="margin-top:4px">Nova AI tərəfindən hazırlanmışdır · NovaZeyd/Proje_01</p>
+  </footer>
+
+</main>
+
+<script>
+  // Active nav highlighting
+  const sections = document.querySelectorAll('.section');
+  const navLinks = document.querySelectorAll('.sidebar a');
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(s => {
+      if (window.scrollY >= s.offsetTop - 60) current = s.id;
+    });
+    navLinks.forEach(a => {
+      a.classList.remove('active');
+      if (a.getAttribute('href') === '#' + current) a.classList.add('active');
+    });
+  });
+
+  // Search filter
+  function filterNav(val) {
+    navLinks.forEach(a => {
+      a.style.display = a.textContent.toLowerCase().includes(val.toLowerCase()) ? 'block' : 'none';
+    });
+    document.querySelectorAll('.cat').forEach(c => c.style.display = val ? 'none' : '');
+  }
+</script>
+</body>
+</html>
